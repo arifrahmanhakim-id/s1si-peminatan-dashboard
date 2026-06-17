@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 # =========================
 # 1) Baca data
 # =========================
-excel_path = "/Users/arifrahmanhakim/Desktop/PEMINATAN/s1si-ml/data/data_latih_dummy.xlsx"  # <-- ganti sesuai file Anda
+excel_path = "/Users/arifrahmanhakim/Desktop/PEMINATAN/s1si-ml/src/data/data_latih_dummy.xlsx"  # <-- ganti sesuai file Anda
 df = pd.read_excel(excel_path)
 
 # =========================
