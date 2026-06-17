@@ -486,8 +486,8 @@ st.markdown(
             Dashboard Peminatan Laboratorium
         </div>
         <div class='header-subtitle'>
-            Sistem prediksi minat mahasiswa S1 Sistem Informasi ke Laboratorium SAGE (Data & Analytics) 
-            atau DELTA (Software & Development) berbasis nilai akademik dan aktivitas tambahan
+            Sistem prediksi minat mahasiswa S1 Sistem Informasi ke Laboratorium SAGE (Software & Development) 
+            atau DELTA (Data & Analytics) berbasis nilai akademik dan aktivitas tambahan.
         </div>
     </div>
     """,
