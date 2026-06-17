@@ -867,8 +867,8 @@ with tab_vis:
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     
     # ========== LAYOUT 2 KOLOM: DONUT & PENJELASAN ==========
-    col_chart, col_explanation = st.columns([1.2, 1], gap="large")
-    
+    col_chart, col_explanation = st.columns([1.3, 1], gap="large")
+
     # ========== KOLOM KIRI: DONUT CHART ==========
     with col_chart:
         st.markdown(
@@ -905,13 +905,16 @@ with tab_vis:
             
         except Exception as e:
             st.error(f"❌ Error rendering donut chart: {str(e)}")
-    
-    # ========== KOLOM KANAN: PENJELASAN DONUT CHART ==========  
-    with col_explanation:  
+
+    # ========== KOLOM KANAN: PENJELASAN DONUT CHART (MIDDLE RIGHT) ==========  
+    with col_explanation:
+        # Vertical spacer untuk menempatkan box di tengah
+        st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+        
         st.markdown(
             """
             <div style='padding: 20px; background: linear-gradient(135deg, rgba(107, 15, 26, 0.08) 0%, rgba(107, 15, 26, 0.04) 100%); border-left: 4px solid #6B0F1A; border-radius: 8px; font-size: 14px; line-height: 1.8; color: #374151;'>
-                <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;'>
                     <i class='fas fa-lightbulb'></i> Penjelasan
                 </div>
                 <strong style='color: #6B0F1A; font-size: 15px; display: block; margin-bottom: 12px;'>Penjelasan Donut Chart:</strong>
@@ -921,10 +924,11 @@ with tab_vis:
             unsafe_allow_html=True
         )
 
+
     
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     
-    # ========== BAR CHART: DISTRIBUSI CONFIDENCE LEVEL ==========
+# ========== BAR CHART: DISTRIBUSI CONFIDENCE LEVEL ==========
     st.markdown(
         """
         <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
@@ -933,9 +937,9 @@ with tab_vis:
         """,
         unsafe_allow_html=True
     )
-    
-    col_bar_chart, col_bar_explanation = st.columns([1.2, 1], gap="large")
-    
+
+    col_bar_chart, col_bar_explanation = st.columns([1.3, 1], gap="large")
+
     # ========== KOLOM KIRI: BAR CHART ==========
     with col_bar_chart:
         try:
@@ -985,14 +989,17 @@ with tab_vis:
                 
         except Exception as e:
             st.error(f"❌ Error rendering bar chart: {str(e)}")
-    
-    # ========== KOLOM KANAN: PENJELASAN BAR CHART ==========
+
+    # ========== KOLOM KANAN: PENJELASAN BAR CHART (MIDDLE RIGHT) ==========
     with col_bar_explanation:
+        # Vertical spacer untuk menempatkan box di tengah
+        st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+        
         st.markdown(
             """
             <div style='padding: 20px; background: linear-gradient(135deg, rgba(107, 15, 26, 0.08) 0%, rgba(107, 15, 26, 0.04) 100%); border-left: 4px solid #6B0F1A; border-radius: 8px; font-size: 14px; line-height: 1.8; color: #374151;'>
-                <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
-                    <i class='fas fa-chart-bar'></i> Penjelasan
+                <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;'>
+                    <i class='fas fa-lightbulb'></i> Penjelasan
                 </div>
                 <strong style='color: #6B0F1A; font-size: 15px; display: block; margin-bottom: 12px;'>Penjelasan Bar Chart:</strong>
                 Grafik ini menunjukkan sebaran tingkat confidence (keyakinan) model dalam melakukan prediksi. Semakin tinggi confidence, semakin yakin model dengan keputusannya. Mayoritas mahasiswa seharusnya berada di range 75-100% untuk prediksi yang berkualitas tinggi. Nilai confidence yang tinggi mengindikasikan bahwa model memiliki tingkat akurasi dan reliabilitas yang baik dalam memprediksi peminatan laboratorium mahasiswa.
@@ -1000,6 +1007,7 @@ with tab_vis:
             """,
             unsafe_allow_html=True
         )
+
     
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     
