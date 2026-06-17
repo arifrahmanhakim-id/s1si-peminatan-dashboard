@@ -831,7 +831,6 @@ with tab_vis:
                 <div class='kpi-label'>Total Dataset</div>
                 <div class='kpi-value'>{total}</div>
                 <div class='kpi-sub'>Mahasiswa dianalisis</div>
-                <i class='fas fa-calculator kpi-icon'></i>
             </div>
             """,
             unsafe_allow_html=True
@@ -844,7 +843,6 @@ with tab_vis:
                 <div class='kpi-label'>Lab SAGE</div>
                 <div class='kpi-value'>{count_sage}</div>
                 <div class='kpi-sub'>Software Development</div>
-                <i class='fas fa-code kpi-icon'></i>
             </div>
             """,
             unsafe_allow_html=True
@@ -857,7 +855,6 @@ with tab_vis:
                 <div class='kpi-label'>Lab DELTA</div>
                 <div class='kpi-value'>{count_delta}</div>
                 <div class='kpi-sub'>Data & Analytics</div>
-                <i class='fas fa-database kpi-icon'></i>
             </div>
             """,
             unsafe_allow_html=True
@@ -865,45 +862,103 @@ with tab_vis:
     
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     
-    st.markdown(
-        """
-        <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
-            <i class='fas fa-pie-chart'></i> Distribusi Peminatan Laboratorium
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # ========== LAYOUT 2 KOLOM UNTUK DONUT & BAR CHART ==========
+    col_left, col_right = st.columns(2, gap="large")
     
-    pred_counts_safe = pred_counts.reindex(["SAGE", "DELTA"]).fillna(0).astype(int)
+    # KOLOM KIRI: DONUT CHART
+    with col_left:
+        st.markdown(
+            """
+            <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <i class='fas fa-pie-chart'></i> Distribusi Peminatan Laboratorium
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        pred_counts_safe = pred_counts.reindex(["SAGE", "DELTA"]).fillna(0).astype(int)
+        
+        fig_donut = go.Figure(
+            data=[go.Pie(
+                labels=["SAGE", "DELTA"],
+                values=pred_counts_safe.values,
+                hole=0.5,
+                marker=dict(colors=["#6B0F1A", "#6B7280"]),
+                textinfo="label+percent+value",
+                hovertemplate="<b>%{label}</b><br>Jumlah: %{value}<br>Persentase: %{percent}<extra></extra>",
+            )]
+        )
+        fig_donut.update_layout(
+            height=400,
+            margin=dict(l=20, r=20, t=20, b=20),
+            showlegend=True,
+            font=dict(size=12)
+        )
+        st.plotly_chart(fig_donut, use_container_width=True)
+        
+        # PENJELASAN DONUT DENGAN MIN HEIGHT
+        st.markdown(
+            """
+            <div style='min-height: 120px; padding: 15px; background-color: #F9FAFB; border-left: 4px solid #6B0F1A; border-radius: 4px; font-size: 14px; line-height: 1.6; color: #374151;'>
+                <strong style='color: #6B0F1A;'>Penjelasan Donut Chart:</strong> 
+                Visualisasi ini menampilkan proporsi distribusi mahasiswa antara dua laboratorium. 
+                Warna maroon merepresentasikan SAGE (Software & Development), sedangkan warna abu-abu 
+                merepresentasikan DELTA (Data & Analytics). Ukuran setiap slice menunjukkan persentase 
+                mahasiswa yang termasuk dalam setiap laboratorium.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     
-    fig_donut = go.Figure(
-        data=[go.Pie(
-            labels=["SAGE", "DELTA"],
-            values=pred_counts_safe.values,
-            hole=0.5,
-            marker=dict(colors=["#6B0F1A", "#6B7280"]),
-            textinfo="label+percent+value",
-            hovertemplate="<b>%{label}</b><br>Jumlah: %{value}<br>Persentase: %{percent}<extra></extra>",
-        )]
-    )
-    fig_donut.update_layout(
-        height=400,
-        margin=dict(l=20, r=20, t=20, b=20),
-        showlegend=True,
-        font=dict(size=12)
-    )
-    st.plotly_chart(fig_donut, use_container_width=True)
-    
-    st.markdown(
-        """
-        <div class='narasi-box'>
-            <strong>Penjelasan Donut Chart:</strong> Visualisasi ini menampilkan proporsi distribusi mahasiswa 
-            antara dua laboratorium. Warna maroon merepresentasikan SAGE (Data & Analytics), 
-            sedangkan warna abu-abu merepresentasikan DELTA (Software & Development).
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # KOLOM KANAN: BAR CHART
+    with col_right:
+        st.markdown(
+            """
+            <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <i class='fas fa-bar-chart'></i> Distribusi Confidence Level Prediksi
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        confidence_bins = pd.cut(df_out["Confidence"], bins=[0, 25, 50, 75, 100])
+        conf_dist = confidence_bins.value_counts().sort_index()
+        
+        fig_conf = go.Figure(
+            data=[go.Bar(
+                x=[f"{i.left:.0f}-{i.right:.0f}%" for i in conf_dist.index],
+                y=conf_dist.values,
+                marker=dict(color="#6B0F1A"),
+                text=conf_dist.values,
+                textposition="outside",
+                hovertemplate="<b>Range Confidence: %{x}</b><br>Jumlah Mahasiswa: %{y}<extra></extra>",
+            )]
+        )
+        fig_conf.update_layout(
+            height=400,
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis_title="Confidence Range (%)",
+            yaxis_title="Jumlah Mahasiswa",
+            showlegend=False,
+            font=dict(size=12),
+            plot_bgcolor="rgba(0,0,0,0)",
+            xaxis=dict(showgrid=False),
+            yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB")
+        )
+        st.plotly_chart(fig_conf, use_container_width=True)
+        
+        # PENJELASAN BAR CHART DENGAN MIN HEIGHT SAMA
+        st.markdown(
+            """
+            <div style='min-height: 120px; padding: 15px; background-color: #F9FAFB; border-left: 4px solid #6B0F1A; border-radius: 4px; font-size: 14px; line-height: 1.6; color: #374151;'>
+                <strong style='color: #6B0F1A;'>Penjelasan Bar Chart:</strong> 
+                Grafik ini menunjukkan sebaran tingkat confidence (keyakinan) model dalam melakukan prediksi. 
+                Semakin tinggi confidence, semakin yakin model dengan keputusannya. Mayoritas mahasiswa seharusnya 
+                berada di range 75-100% untuk prediksi yang berkualitas tinggi.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 # =========================
 # TAB 4: EXPORT
