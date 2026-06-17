@@ -1,12 +1,13 @@
 # =========================
-# app_streamlit.py - FINAL VERSION
+# app_streamlit.py - FINAL VERSION (FIXED)
 # Dashboard Peminatan Laboratorium S1SI - Professional Version
-# Icon Font Awesome, KPI dengan Icon di Kanan Atas
+# FIX: Menggunakan joblib untuk load model & confidence score
 # =========================
 import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
+import joblib
 from io import BytesIO
 import os
 import plotly.express as px
@@ -77,7 +78,7 @@ st.set_page_config(
 )
 
 # =========================
-# CSS STYLING - KPI dengan Icon di Kanan Atas (UPDATED)
+# CSS STYLING
 # =========================
 st.markdown(
     f"""
@@ -124,7 +125,7 @@ st.markdown(
         line-height: 1.6;
     }}
     
-    /* ===== KPI CARD - ICON DI KANAN ATAS (GRID LAYOUT) ===== */
+    /* ===== KPI CARD ===== */
     .kpi-card {{
         background: {COLORS['white']};
         border-radius: 14px;
@@ -156,7 +157,6 @@ st.markdown(
         transform: translateY(-6px);
     }}
     
-    /* ===== KPI LABEL ===== */
     .kpi-label {{
         font-size: 11px;
         color: {COLORS['text_muted']};
@@ -168,7 +168,6 @@ st.markdown(
         margin: 0;
     }}
     
-    /* ===== KPI VALUE - DIPERBESAR ===== */
     .kpi-value {{
         font-size: 48px;
         font-weight: 900;
@@ -180,7 +179,6 @@ st.markdown(
         letter-spacing: -1px;
     }}
     
-    /* ===== KPI SUBTITLE ===== */
     .kpi-sub {{
         font-size: 12px;
         color: {COLORS['gray']};
@@ -190,7 +188,6 @@ st.markdown(
         line-height: 1.4;
     }}
     
-    /* ===== KPI ICON - KANAN ATAS ===== */
     .kpi-icon {{
         font-size: 56px;
         color: var(--accent-color);
@@ -203,12 +200,10 @@ st.markdown(
         margin-top: -8px;
     }}
     
-    /* ===== ACCENT COLORS ===== */
     .accent-maroon {{ --accent-color: {COLORS['maroon']}; }}
     .accent-gray {{ --accent-color: {COLORS['gray']}; }}
     .accent-dark {{ --accent-color: {COLORS['maroon_dark']}; }}
     
-    /* ===== CARD BASE ===== */
     .card {{
         background: {COLORS['white']};
         border-radius: 10px;
@@ -217,7 +212,6 @@ st.markdown(
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }}
     
-    /* ===== INSIGHT BOX ===== */
     .insight-box {{
         background: linear-gradient(135deg, rgba(107, 15, 26, 0.08) 0%, rgba(107, 15, 26, 0.04) 100%);
         border-left: 4px solid {COLORS['maroon']};
@@ -242,7 +236,6 @@ st.markdown(
         color: {COLORS['text_muted']};
     }}
     
-    /* ===== NARASI BOX ===== */
     .narasi-box {{
         background: {COLORS['white']};
         border-left: 4px solid {COLORS['gray']};
@@ -255,7 +248,6 @@ st.markdown(
         border: 1px solid {COLORS['border']};
     }}
     
-    /* ===== TABLE ===== */
     .stat-table {{
         width: 100%;
         border-collapse: collapse;
@@ -280,7 +272,6 @@ st.markdown(
         background-color: {COLORS['neutral']};
     }}
     
-    /* ===== DIVIDER ===== */
     .divider {{
         height: 2px;
         background: linear-gradient(90deg, {COLORS['maroon']} 0%, transparent 100%);
@@ -288,7 +279,6 @@ st.markdown(
         border: none;
     }}
     
-    /* ===== STREAMLIT OVERRIDE ===== */
     .stButton > button {{
         border-radius: 8px;
         background-color: {COLORS['maroon']};
@@ -304,7 +294,6 @@ st.markdown(
         box-shadow: 0 6px 16px rgba(107, 15, 26, 0.3);
     }}
     
-    /* ===== CUSTOM METRIC FONT SIZE UNTUK SIDEBAR ===== */
     [data-testid="metric-container"] {{
         display: flex;
         flex-direction: column;
@@ -322,7 +311,6 @@ st.markdown(
         color: {COLORS['text_muted']} !important;
     }}
     
-    /* ===== UTILITY ===== */
     .text-maroon {{ color: {COLORS['maroon']}; }}
     .text-gray {{ color: {COLORS['gray']}; }}
     .text-sm {{ font-size: 12px; }}
@@ -334,53 +322,44 @@ st.markdown(
 )
 
 # =========================
-# HELPER FUNCTIONS
+# HELPER FUNCTIONS - FIXED
 # =========================
 @st.cache_resource
-def load_model_scaler():
-    """Load model & scaler."""
+def load_model_scaler_info():
+    """Load model, scaler, dan model info menggunakan joblib."""
     try:
-        model = None
-        scaler = None
+        # Load model menggunakan joblib (lebih reliable untuk sklearn)
+        model = joblib.load("model_peminatan.pkl")
         
-        with open("model_peminatan.pkl", "rb") as f:
-            model = pickle.load(f)
+        # Load scaler menggunakan joblib
+        scaler = joblib.load("scaler_peminatan.pkl")
         
-        try:
-            with open("scaler_peminatan.pkl", "rb") as f:
-                scaler = pickle.load(f)
-        except Exception:
-            scaler = None
+        # Load model info menggunakan pickle
+        with open("model_info.pkl", "rb") as f:
+            model_info = pickle.load(f)
         
-        return model, scaler, None
+        return model, scaler, model_info, None
     except Exception as e:
-        return None, None, str(e)
+        return None, None, {}, str(e)
 
 
 @st.cache_data
 def safe_read_excel(path):
-    """Read Excel file."""
+    """Read Excel file dengan type handling."""
     return pd.read_excel(
         path,
         dtype={"NIM": str, "Nama Lengkap": str, "Kelas": str}
     )
 
 
-@st.cache_resource
-def load_model_info():
-    """Load model metadata."""
-    try:
-        with open("model_info.pkl", "rb") as f:
-            return pickle.load(f)
-    except Exception:
-        return {}
-
-
 # =========================
-# LOAD MODEL
+# LOAD MODEL - PERBAIKAN UTAMA
 # =========================
-model, scaler, load_error = load_model_scaler()
-model_info = load_model_info()
+model, scaler, model_info, load_error = load_model_scaler_info()
+
+# Debug info
+if load_error:
+    st.error(f"⚠️ Error loading model: {load_error}")
 
 # =========================
 # SIDEBAR
@@ -407,7 +386,7 @@ with st.sidebar:
             f.write(uploaded_file.getbuffer())
         st.success("✓ Dataset berhasil disimpan")
     
-    # Dataset info - CUSTOM METRIC DENGAN FONT SIZE LEBIH KECIL
+    # Dataset info
     if os.path.exists("dataset_aktif.xlsx"):
         try:
             df_info = safe_read_excel("dataset_aktif.xlsx")
@@ -472,6 +451,8 @@ with st.sidebar:
         st.caption(f"**Algoritma:** {model_info.get('algorithm', 'Random Forest')}")
         st.caption(f"**Akurasi:** {model_info.get('accuracy', 0):.2%}")
         st.caption(f"**Features:** {model_info.get('n_features', len(FEATURE_COLS))}")
+    else:
+        st.warning("⚠️ Model info tidak tersedia")
     
     st.divider()
 
@@ -531,51 +512,70 @@ try:
             st.session_state.file_loaded_message = False
             
 except Exception as e:
-    st.error(f"Gagal membaca file: {e}")
+    st.error(f"❌ Gagal membaca file: {e}")
     st.stop()
 
 # Validasi kolom
 required_for_pred = ID_COLS[:2] + FEATURE_COLS
 missing = [c for c in required_for_pred if c not in df.columns]
 if missing:
-    st.error(f"Kolom yang hilang: {', '.join(missing)}")
+    st.error(f"❌ Kolom yang hilang: {', '.join(missing)}")
     st.stop()
 
 if model is None:
-    st.error("Model belum tersedia. Jalankan training terlebih dahulu.")
+    st.error("❌ Model belum tersedia. Jalankan training terlebih dahulu dengan menjalankan train_model.py")
     st.stop()
 
 # =========================
-# PREDIKSI
+# PREDIKSI - FIXED
 # =========================
-X = df[FEATURE_COLS].copy()
-X = X.apply(pd.to_numeric, errors="coerce").fillna(0)
+try:
+    # Prepare features
+    X = df[FEATURE_COLS].copy()
+    X = X.apply(pd.to_numeric, errors="coerce").fillna(0)
+    
+    # Standardisasi dengan scaler
+    if scaler is not None:
+        try:
+            X_scaled = scaler.transform(X)
+        except Exception as e:
+            st.error(f"❌ Error saat standardisasi: {e}")
+            st.stop()
+    else:
+        X_scaled = X
+    
+    # Prediksi
+    pred = model.predict(X_scaled)
+    pred_labels = pd.Series(pred).map({0: "SAGE", 1: "DELTA"}).astype(str)
+    
+    # PENTING: Get probabilities untuk confidence score
+    if hasattr(model, "predict_proba"):
+        probs = model.predict_proba(X_scaled)
+        prob_sage = probs[:, 0] * 100
+        prob_delta = probs[:, 1] * 100
+        confidence = np.max(probs, axis=1) * 100
+    else:
+        prob_sage = np.full(len(X), np.nan)
+        prob_delta = np.full(len(X), np.nan)
+        confidence = np.full(len(X), np.nan)
+        st.warning("⚠️ Model tidak mendukung predict_proba()")
+    
+except Exception as e:
+    st.error(f"❌ Error saat prediksi: {e}")
+    st.stop()
 
-if scaler is not None:
-    X_scaled = scaler.transform(X)
-else:
-    X_scaled = X
-
-pred = model.predict(X_scaled)
-pred_labels = pd.Series(pred).map({0: "SAGE", 1: "DELTA"}).astype(str)
-
+# Buat dataframe output
 df_out = df.copy()
 df_out["NIM"] = df_out["NIM"].astype(str)
 df_out["Prediksi Lab"] = pred_labels
+df_out["Probabilitas SAGE"] = prob_sage
+df_out["Probabilitas DELTA"] = prob_delta
+df_out["Confidence"] = confidence
 
+# Numeric columns
 for col in FEATURE_COLS:
     if col in df_out.columns:
         df_out[col] = pd.to_numeric(df_out[col], errors="coerce")
-
-if hasattr(model, "predict_proba"):
-    probs = model.predict_proba(X_scaled)
-    df_out["Probabilitas SAGE"] = probs[:, 0] * 100
-    df_out["Probabilitas DELTA"] = probs[:, 1] * 100
-    df_out["Confidence"] = df_out[["Probabilitas SAGE", "Probabilitas DELTA"]].max(axis=1)
-else:
-    df_out["Probabilitas SAGE"] = np.nan
-    df_out["Probabilitas DELTA"] = np.nan
-    df_out["Confidence"] = np.nan
 
 # =========================
 # SUMMARY METRICS
@@ -586,7 +586,7 @@ count_sage = int((df_out["Prediksi Lab"] == "SAGE").sum())
 count_delta = int((df_out["Prediksi Lab"] == "DELTA").sum())
 
 # =========================
-# TABS - UNICODE SYMBOLS
+# TABS
 # =========================
 tab_summary, tab_table, tab_vis, tab_export = st.tabs(
     ["⊞ Ringkasan", 
@@ -664,7 +664,7 @@ with tab_summary:
                 Berdasarkan analisis machine learning terhadap {total} mahasiswa, 
                 sebagian besar (<strong>{persen_mayoritas:.1f}%</strong>) memiliki profil yang sesuai 
                 dengan <strong>Laboratorium {mayoritas}</strong>. 
-                {"Lab SAGE fokus pada Data Analytics & Business Intelligence." if mayoritas == "SAGE" else "Lab DELTA fokus pada Software Development & Architecture."}
+                {"Lab SAGE fokus pada Software Development & Architecture." if mayoritas == "SAGE" else "Lab DELTA fokus pada Data Analytics & Business Intelligence."}
             </div>
         </div>
         """,
@@ -810,7 +810,7 @@ with tab_table:
     )
 
 # =========================
-# TAB 3: VISUALISASI
+# TAB 3: VISUALISASI - FIXED
 # =========================
 with tab_vis:
     st.markdown(
@@ -829,14 +829,10 @@ with tab_vis:
         st.markdown(
             f"""
             <div class='kpi-card accent-maroon'>
-                <div style='display: flex; justify-content: space-between; align-items: flex-start;'>
-                    <div>
-                        <div class='kpi-label'>Total Dataset</div>
-                        <div class='kpi-value'>{total}</div>
-                        <div class='kpi-sub'>Mahasiswa dianalisis</div>
-                    </div>
-                    <i class='fas fa-calculator kpi-icon' style='font-size: 32px; color: #6B0F1A; opacity: 0.3;'></i>
-                </div>
+                <div class='kpi-label'>Total Dataset</div>
+                <div class='kpi-value'>{total}</div>
+                <div class='kpi-sub'>Mahasiswa dianalisis</div>
+                <i class='fas fa-calculator kpi-icon'></i>
             </div>
             """,
             unsafe_allow_html=True
@@ -846,14 +842,10 @@ with tab_vis:
         st.markdown(
             f"""
             <div class='kpi-card accent-maroon'>
-                <div style='display: flex; justify-content: space-between; align-items: flex-start;'>
-                    <div>
-                        <div class='kpi-label'>Lab SAGE</div>
-                        <div class='kpi-value'>{count_sage}</div>
-                        <div class='kpi-sub'>Software Development</div>
-                    </div>
-                    <i class='fas fa-code kpi-icon' style='font-size: 32px; color: #6B0F1A; opacity: 0.3;'></i>
-                </div>
+                <div class='kpi-label'>Lab SAGE</div>
+                <div class='kpi-value'>{count_sage}</div>
+                <div class='kpi-sub'>Software Development</div>
+                <i class='fas fa-code kpi-icon'></i>
             </div>
             """,
             unsafe_allow_html=True
@@ -863,14 +855,10 @@ with tab_vis:
         st.markdown(
             f"""
             <div class='kpi-card accent-gray'>
-                <div style='display: flex; justify-content: space-between; align-items: flex-start;'>
-                    <div>
-                        <div class='kpi-label'>Lab DELTA</div>
-                        <div class='kpi-value'>{count_delta}</div>
-                        <div class='kpi-sub'>Data & Analytics</div>
-                    </div>
-                    <i class='fas fa-database kpi-icon' style='font-size: 32px; color: #6B7280; opacity: 0.3;'></i>
-                </div>
+                <div class='kpi-label'>Lab DELTA</div>
+                <div class='kpi-value'>{count_delta}</div>
+                <div class='kpi-sub'>Data & Analytics</div>
+                <i class='fas fa-database kpi-icon'></i>
             </div>
             """,
             unsafe_allow_html=True
@@ -916,9 +904,8 @@ with tab_vis:
             st.plotly_chart(fig_donut, use_container_width=True)
             
         except Exception as e:
-            st.error(f"Error rendering donut chart: {str(e)}")
+            st.error(f"❌ Error rendering donut chart: {str(e)}")
         
-        # PENJELASAN DONUT CHART
         st.markdown(
             """
             <div style='min-height: 120px; padding: 15px; background-color: #F9FAFB; border-left: 4px solid #6B0F1A; border-radius: 4px; font-size: 14px; line-height: 1.6; color: #374151;'>
@@ -949,6 +936,13 @@ with tab_vis:
                 conf_data = df_out["Confidence"].dropna()
                 
                 if len(conf_data) > 0:
+                    # Debug info
+                    with st.expander("ℹ Debug Info", expanded=False):
+                        st.write(f"✓ Confidence ditemukan: {len(conf_data)} data")
+                        st.write(f"  - Min: {conf_data.min():.2f}%")
+                        st.write(f"  - Max: {conf_data.max():.2f}%")
+                        st.write(f"  - Mean: {conf_data.mean():.2f}%")
+                    
                     # BINNING DATA CONFIDENCE
                     confidence_bins = pd.cut(
                         conf_data,
@@ -1006,19 +1000,20 @@ with tab_vis:
                     st.plotly_chart(fig_conf, use_container_width=True, config={"responsive": True})
                     
                 else:
-                    st.warning("⚠️ Tidak ada data confidence untuk ditampilkan")
+                    st.warning("⚠️ Tidak ada data confidence untuk ditampilkan (semua NaN)")
             else:
                 st.warning("⚠️ Kolom 'Confidence' tidak tersedia di dataset")
                 
         except Exception as e:
-            st.error(f"Error rendering bar chart: {str(e)}")
-            st.write("Debug Info:")
-            st.write(f"- Kolom ada: {'Confidence' in df_out.columns}")
-            if "Confidence" in df_out.columns:
-                st.write(f"- Data valid: {df_out['Confidence'].notna().sum()}")
-                st.write(f"- Min: {df_out['Confidence'].min()}, Max: {df_out['Confidence'].max()}")
+            st.error(f"❌ Error rendering bar chart: {str(e)}")
+            with st.expander("📋 Detail Error", expanded=False):
+                st.write(f"Traceback: {e}")
+                st.write(f"Kolom ada: {'Confidence' in df_out.columns}")
+                if "Confidence" in df_out.columns:
+                    st.write(f"Data valid: {df_out['Confidence'].notna().sum()}")
+                    if df_out['Confidence'].notna().sum() > 0:
+                        st.write(f"Min: {df_out['Confidence'].min()}, Max: {df_out['Confidence'].max()}")
         
-        # PENJELASAN BAR CHART
         st.markdown(
             """
             <div style='min-height: 120px; padding: 15px; background-color: #F9FAFB; border-left: 4px solid #6B0F1A; border-radius: 4px; font-size: 14px; line-height: 1.6; color: #374151;'>
@@ -1033,7 +1028,7 @@ with tab_vis:
     
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     
-    # ========== ADDITIONAL VISUALIZATIONS (OPTIONAL) ==========
+    # ========== ADDITIONAL VISUALIZATIONS ==========
     st.markdown(
         """
         <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
@@ -1056,7 +1051,7 @@ with tab_vis:
         )
         
         try:
-            if "Probabilitas SAGE" in df_out.columns:
+            if "Probabilitas SAGE" in df_out.columns and df_out["Probabilitas SAGE"].notna().any():
                 fig_hist_sage = go.Figure(
                     data=[go.Histogram(
                         x=df_out["Probabilitas SAGE"].dropna(),
@@ -1076,7 +1071,7 @@ with tab_vis:
                 )
                 st.plotly_chart(fig_hist_sage, use_container_width=True)
         except Exception as e:
-            st.warning(f"Gagal menampilkan histogram SAGE: {str(e)}")
+            st.warning(f"⚠️ Gagal menampilkan histogram SAGE: {str(e)}")
     
     with col_analysis2:
         st.markdown(
@@ -1089,7 +1084,7 @@ with tab_vis:
         )
         
         try:
-            if "Probabilitas DELTA" in df_out.columns:
+            if "Probabilitas DELTA" in df_out.columns and df_out["Probabilitas DELTA"].notna().any():
                 fig_hist_delta = go.Figure(
                     data=[go.Histogram(
                         x=df_out["Probabilitas DELTA"].dropna(),
@@ -1109,7 +1104,7 @@ with tab_vis:
                 )
                 st.plotly_chart(fig_hist_delta, use_container_width=True)
         except Exception as e:
-            st.warning(f"Gagal menampilkan histogram DELTA: {str(e)}")
+            st.warning(f"⚠️ Gagal menampilkan histogram DELTA: {str(e)}")
 
 
 # =========================
@@ -1186,7 +1181,7 @@ st.markdown(
     <div style='text-align: center; padding: 20px 0; color: {COLORS['text_muted']}; font-size: 12px;'>
         <i class='fas fa-copyright'></i> {datetime.now().year} Data Driven Decision Version 2.0 | Data Exploration, Learning & Translational Analytics Lab | 
         <span style='color: {COLORS['maroon']};'>
-            <strong>δ Delta Lab<strong>
+            <strong>δ DELTA Lab</strong>
         </span>
     </div>
     """,
