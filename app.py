@@ -906,20 +906,14 @@ with tab_vis:
         except Exception as e:
             st.error(f"❌ Error rendering donut chart: {str(e)}")
     
-# ========== KOLOM KANAN: PENJELASAN DONUT CHART ==========
-    with col_explanation:
-        st.markdown(
-            """
-            <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
-                <i class='fas fa-lightbulb'></i> Penjelasan
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        
+    # ========== KOLOM KANAN: PENJELASAN DONUT CHART ==========  
+    with col_explanation:  
         st.markdown(
             """
             <div style='padding: 20px; background: linear-gradient(135deg, rgba(107, 15, 26, 0.08) 0%, rgba(107, 15, 26, 0.04) 100%); border-left: 4px solid #6B0F1A; border-radius: 8px; font-size: 14px; line-height: 1.8; color: #374151;'>
+                <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                    <i class='fas fa-lightbulb'></i> Penjelasan
+                </div>
                 <strong style='color: #6B0F1A; font-size: 15px; display: block; margin-bottom: 12px;'>Penjelasan Donut Chart:</strong>
                 Visualisasi ini menampilkan proporsi distribusi mahasiswa antara dua laboratorium. Warna <strong style='color: #6B0F1A;'>maroon</strong> merepresentasikan <strong>SAGE (Software & Development)</strong>, sedangkan warna <strong style='color: #6B7280;'>abu-abu</strong> merepresentasikan <strong>DELTA (Data & Analytics)</strong>. Ukuran setiap slice menunjukkan persentase mahasiswa yang termasuk dalam setiap laboratorium.
             </div>
@@ -927,8 +921,85 @@ with tab_vis:
             unsafe_allow_html=True
         )
 
-
-
+    
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    
+    # ========== BAR CHART: DISTRIBUSI CONFIDENCE LEVEL ==========
+    st.markdown(
+        """
+        <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+            <i class='fas fa-chart-bar'></i> Distribusi Confidence Level Prediksi
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    col_bar_chart, col_bar_explanation = st.columns([1.2, 1], gap="large")
+    
+    # ========== KOLOM KIRI: BAR CHART ==========
+    with col_bar_chart:
+        try:
+            # Membuat kategori confidence dan menghitung frekuensi
+            if "Confidence" in df_out.columns:
+                confidence_data = df_out["Confidence"].dropna()
+                
+                # Binning confidence ke dalam kategori
+                bins = [0, 25, 50, 75, 100]
+                labels = ["0-25%", "25-50%", "50-75%", "75-100%"]
+                confidence_binned = pd.cut(confidence_data, bins=bins, labels=labels, right=True)
+                confidence_counts = confidence_binned.value_counts().sort_index()
+                
+                fig_bar = go.Figure(
+                    data=[go.Bar(
+                        x=confidence_counts.index.astype(str),
+                        y=confidence_counts.values,
+                        marker=dict(
+                            color="#6B0F1A",
+                            line=dict(color="#4A0A13", width=1),
+                            opacity=0.85
+                        ),
+                        text=confidence_counts.values,
+                        textposition="outside",
+                        hovertemplate="<b>%{x}</b><br>Jumlah Mahasiswa: %{y}<extra></extra>",
+                        name="Mahasiswa"
+                    )]
+                )
+                
+                fig_bar.update_layout(
+                    height=400,
+                    margin=dict(l=60, r=20, t=20, b=50),
+                    xaxis_title="Confidence Range (%)",
+                    yaxis_title="Jumlah Mahasiswa",
+                    showlegend=False,
+                    font=dict(size=12),
+                    plot_bgcolor="rgba(255, 255, 255, 0.8)",
+                    paper_bgcolor="rgba(0, 0, 0, 0)",
+                    xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor="#E5E7EB"),
+                    yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1, linecolor="#E5E7EB"),
+                    hovermode="x unified"
+                )
+                
+                st.plotly_chart(fig_bar, use_container_width=True)
+            else:
+                st.warning("⚠️ Kolom Confidence tidak ditemukan")
+                
+        except Exception as e:
+            st.error(f"❌ Error rendering bar chart: {str(e)}")
+    
+    # ========== KOLOM KANAN: PENJELASAN BAR CHART ==========
+    with col_bar_explanation:
+        st.markdown(
+            """
+            <div style='padding: 20px; background: linear-gradient(135deg, rgba(107, 15, 26, 0.08) 0%, rgba(107, 15, 26, 0.04) 100%); border-left: 4px solid #6B0F1A; border-radius: 8px; font-size: 14px; line-height: 1.8; color: #374151;'>
+                <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                    <i class='fas fa-chart-bar'></i> Penjelasan
+                </div>
+                <strong style='color: #6B0F1A; font-size: 15px; display: block; margin-bottom: 12px;'>Penjelasan Bar Chart:</strong>
+                Grafik ini menunjukkan sebaran tingkat confidence (keyakinan) model dalam melakukan prediksi. Semakin tinggi confidence, semakin yakin model dengan keputusannya. Mayoritas mahasiswa seharusnya berada di range 75-100% untuk prediksi yang berkualitas tinggi. Nilai confidence yang tinggi mengindikasikan bahwa model memiliki tingkat akurasi dan reliabilitas yang baik dalam memprediksi peminatan laboratorium mahasiswa.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     
@@ -1110,6 +1181,7 @@ with tab_vis:
             
     except Exception as e:
         st.error(f"❌ Error menampilkan feature importance: {str(e)}")
+
 
 
 
