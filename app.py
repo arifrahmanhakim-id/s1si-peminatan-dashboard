@@ -937,7 +937,7 @@ with tab_vis:
                 
                 if len(conf_data) > 0:
                     # Debug info
-                    with st.expander("ℹ Debug Info", expanded=False):
+                    with st.expander("Debug Info", expanded=False):
                         st.write(f"✓ Confidence ditemukan: {len(conf_data)} data")
                         st.write(f"  - Min: {conf_data.min():.2f}%")
                         st.write(f"  - Max: {conf_data.max():.2f}%")
