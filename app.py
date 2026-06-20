@@ -1,7 +1,7 @@
 # =========================
-# app_streamlit.py - FINAL VERSION (FIXED)
-# Dashboard Peminatan Laboratorium S1SI - Professional Version
-# FIX: Menggunakan joblib untuk load model & confidence score
+# app_streamlit.py - FINAL VERSION
+# Dashboard Peminatan Laboratorium S1SI
+# Menggunakan joblib untuk load model & confidence score
 # =========================
 import streamlit as st
 import pandas as pd
@@ -321,6 +321,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
 # =========================
 # HELPER FUNCTIONS - FIXED
 # =========================
@@ -330,14 +331,14 @@ def load_model_scaler_info():
     try:
         # Load model menggunakan joblib (lebih reliable untuk sklearn)
         model = joblib.load("model_peminatan.pkl")
-        
+
         # Load scaler menggunakan joblib
         scaler = joblib.load("scaler_peminatan.pkl")
-        
+
         # Load model info menggunakan pickle
         with open("model_info.pkl", "rb") as f:
             model_info = pickle.load(f)
-        
+
         return model, scaler, model_info, None
     except Exception as e:
         return None, None, {}, str(e)
@@ -374,28 +375,50 @@ with st.sidebar:
         """,
         unsafe_allow_html=True
     )
-    
+
     uploaded_file = st.file_uploader(
         "Pilih file Excel (.xlsx)",
         type=["xlsx"],
         label_visibility="collapsed"
     )
-    
+
     if uploaded_file:
         with open("dataset_aktif.xlsx", "wb") as f:
             f.write(uploaded_file.getbuffer())
         st.success("✓ Dataset berhasil disimpan")
-    
+
     # Dataset info
     if os.path.exists("dataset_aktif.xlsx"):
         try:
             df_info = safe_read_excel("dataset_aktif.xlsx")
-            st.metric("📂 Dataset", f"{len(df_info)} rows")
+            # Dataset info
+            st.markdown(
+                """
+                <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 16px;'>
+                    <i class='fas fa-folder-open' style='font-size: 16px; color: #6B0F1A;'></i>
+                    <div style='font-size: 14px; font-weight: 700; color: #111827;'>Dataset Information</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            if os.path.exists("dataset_aktif.xlsx"):
+                try:
+                    df_info = safe_read_excel("dataset_aktif.xlsx")
+
+                    st.caption(f"**Rows:** {len(df_info)}")
+                    st.caption(f"**Columns:** {len(df_info.columns)}")
+                    st.caption(f"**File:** dataset_aktif.xlsx")
+
+                except Exception:
+                    st.warning("⚠️ Dataset tidak dapat dibaca")
+            else:
+                st.warning("⚠️ Dataset belum diunggah")
+
+            st.divider()
         except Exception:
             pass
-    
-    st.divider()
-    
+
     # Template
     st.markdown(
         """
@@ -406,7 +429,7 @@ with st.sidebar:
         """,
         unsafe_allow_html=True
     )
-    
+
     if st.button("Download Template Excel", use_container_width=True, key="download_template"):
         template = {
             "NIM": ["311300001"],
@@ -420,11 +443,11 @@ with st.sidebar:
         template["Minat SAGE"] = [50]
         template["Minat DELTA"] = [60]
         template["Target"] = ["SAGE"]
-        
+
         buffer = BytesIO()
         pd.DataFrame(template).to_excel(buffer, index=False)
         buffer.seek(0)
-        
+
         st.download_button(
             "Klik untuk download",
             buffer,
@@ -433,9 +456,9 @@ with st.sidebar:
             use_container_width=True,
             key="template_download"
         )
-    
+
     st.divider()
-    
+
     # Model info
     st.markdown(
         """
@@ -446,14 +469,14 @@ with st.sidebar:
         """,
         unsafe_allow_html=True
     )
-    
+
     if model_info:
         st.caption(f"**Algoritma:** {model_info.get('algorithm', 'Random Forest')}")
         st.caption(f"**Akurasi:** {model_info.get('accuracy', 0):.2%}")
         st.caption(f"**Features:** {model_info.get('n_features', len(FEATURE_COLS))}")
     else:
         st.warning("⚠️ Model info tidak tersedia")
-    
+
     st.divider()
 
 # =========================
@@ -485,7 +508,7 @@ if not os.path.exists("dataset_aktif.xlsx"):
 try:
     df = safe_read_excel("dataset_aktif.xlsx")
     df["NIM"] = df["NIM"].astype(str).str.strip()
-    
+
     if "file_loaded_message" not in st.session_state:
         col1, col2 = st.columns([0.95, 0.05])
         with col1:
@@ -507,10 +530,10 @@ try:
             if st.button("✕", key="close_message", help="Tutup pesan"):
                 st.session_state.file_loaded_message = True
                 st.rerun()
-        
+
         if "file_loaded_message" not in st.session_state:
             st.session_state.file_loaded_message = False
-            
+
 except Exception as e:
     st.error(f"❌ Gagal membaca file: {e}")
     st.stop()
@@ -533,7 +556,7 @@ try:
     # Prepare features
     X = df[FEATURE_COLS].copy()
     X = X.apply(pd.to_numeric, errors="coerce").fillna(0)
-    
+
     # Standardisasi dengan scaler
     if scaler is not None:
         try:
@@ -543,11 +566,11 @@ try:
             st.stop()
     else:
         X_scaled = X
-    
+
     # Prediksi
     pred = model.predict(X_scaled)
     pred_labels = pd.Series(pred).map({0: "SAGE", 1: "DELTA"}).astype(str)
-    
+
     # PENTING: Get probabilities untuk confidence score
     if hasattr(model, "predict_proba"):
         probs = model.predict_proba(X_scaled)
@@ -559,7 +582,7 @@ try:
         prob_delta = np.full(len(X), np.nan)
         confidence = np.full(len(X), np.nan)
         st.warning("⚠️ Model tidak mendukung predict_proba()")
-    
+
 except Exception as e:
     st.error(f"❌ Error saat prediksi: {e}")
     st.stop()
@@ -589,9 +612,9 @@ count_delta = int((df_out["Prediksi Lab"] == "DELTA").sum())
 # TABS
 # =========================
 tab_summary, tab_table, tab_vis, tab_export = st.tabs(
-    ["⊞ Ringkasan", 
-     "⊟ Data", 
-     "◈ Visualisasi", 
+    ["⊞ Ringkasan",
+     "⊟ Data",
+     "◈ Visualisasi",
      "↓ Export"]
 )
 
@@ -607,9 +630,9 @@ with tab_summary:
         """,
         unsafe_allow_html=True
     )
-    
+
     col1, col2, col3 = st.columns(3, gap="large")
-    
+
     with col1:
         st.markdown(
             f"""
@@ -622,38 +645,38 @@ with tab_summary:
             """,
             unsafe_allow_html=True
         )
-    
+
     with col2:
         st.markdown(
             f"""
             <div class='kpi-card accent-maroon'>
                 <div class='kpi-label'>Prediksi SAGE</div>
                 <div class='kpi-value'>{count_sage}</div>
-                <div class='kpi-sub'>{count_sage/total*100:.1f}% dari total</div>
+                <div class='kpi-sub'>{count_sage / total * 100:.1f}% dari total</div>
                 <i class='fas fa-code kpi-icon'></i>
             </div>
             """,
             unsafe_allow_html=True
         )
-    
+
     with col3:
         st.markdown(
             f"""
             <div class='kpi-card accent-gray'>
                 <div class='kpi-label'>Prediksi DELTA</div>
                 <div class='kpi-value'>{count_delta}</div>
-                <div class='kpi-sub'>{count_delta/total*100:.1f}% dari total</div>
+                <div class='kpi-sub'>{count_delta / total * 100:.1f}% dari total</div>
                 <i class='fas fa-database kpi-icon'></i>
             </div>
             """,
             unsafe_allow_html=True
         )
-    
+
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    
+
     mayoritas = pred_counts.idxmax() if len(pred_counts) > 0 else "N/A"
     persen_mayoritas = (pred_counts.max() / total * 100) if total > 0 else 0
-    
+
     st.markdown(
         f"""
         <div class='insight-box'>
@@ -670,9 +693,9 @@ with tab_summary:
         """,
         unsafe_allow_html=True
     )
-    
+
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    
+
     st.markdown(
         """
         <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
@@ -681,26 +704,30 @@ with tab_summary:
         """,
         unsafe_allow_html=True
     )
-    
+
     if hasattr(model, "feature_importances_"):
         fi_df = pd.DataFrame({
             "Feature": FEATURE_COLS,
             "Importance": model.feature_importances_
         }).sort_values("Importance", ascending=False).head(5)
-        
+
         st.dataframe(
             fi_df.reset_index(drop=True),
             use_container_width=True,
             hide_index=True,
         )
-        
+
         st.markdown(
-            """
-            <div class='narasi-box'>
-                <strong>Penjelasan:</strong> Tabel di atas menunjukkan 5 faktor (mata kuliah atau aktivitas) 
-                yang paling mempengaruhi prediksi peminatan laboratorium. Nilai importance yang lebih tinggi 
-                berarti faktor tersebut memiliki kontribusi lebih besar dalam keputusan model.
-            </div>
+            """  
+        <div class='insight-box'>  
+            <div class='insight-title'>  
+                <i class='fas fa-info-circle'></i> Penjelasan 
+            </div>  
+            <div class='insight-text'>Tabel di atas menunjukkan 5 faktor (mata kuliah atau aktivitas) 
+            yang paling mempengaruhi prediksi peminatan laboratorium. Nilai importance yang lebih tinggi 
+            berarti faktor tersebut memiliki kontribusi lebih besar dalam keputusan model. 
+            </div>  
+        </div>  
             """,
             unsafe_allow_html=True
         )
@@ -717,10 +744,11 @@ with tab_table:
         """,
         unsafe_allow_html=True
     )
-    
+
     c1, c2, c3 = st.columns([3, 2, 2])
     with c1:
-        search = st.text_input("Cari NIM atau Nama", "", label_visibility="collapsed", placeholder="Ketik NIM atau nama mahasiswa...")
+        search = st.text_input("Cari NIM atau Nama", "", label_visibility="collapsed",
+                               placeholder="Ketik NIM atau nama mahasiswa...")
     with c2:
         lab_filter = st.multiselect(
             "Filter Lab",
@@ -730,28 +758,29 @@ with tab_table:
         )
     with c3:
         min_conf = st.slider("Min Confidence", 0, 100, 0, label_visibility="collapsed")
-    
+
     df_filter = df_out[df_out["Prediksi Lab"].isin(lab_filter)].copy()
-    
+
     if search.strip():
         mask = (
-            df_filter["NIM"].astype(str).str.contains(search, case=False, na=False) |
-            df_filter["Nama Lengkap"].astype(str).str.contains(search, case=False, na=False)
+                df_filter["NIM"].astype(str).str.contains(search, case=False, na=False) |
+                df_filter["Nama Lengkap"].astype(str).str.contains(search, case=False, na=False)
         )
         df_filter = df_filter[mask]
-    
+
     if df_filter["Confidence"].notna().any():
         df_filter = df_filter[df_filter["Confidence"] >= min_conf]
         df_filter = df_filter.sort_values("Confidence", ascending=False)
-    
+
     st.dataframe(
-        df_filter[["NIM", "Nama Lengkap", "Kelas", "Prediksi Lab", "Confidence", "Probabilitas SAGE", "Probabilitas DELTA"]].reset_index(drop=True),
+        df_filter[["NIM", "Nama Lengkap", "Kelas", "Prediksi Lab", "Confidence", "Probabilitas SAGE",
+                   "Probabilitas DELTA"]].reset_index(drop=True),
         use_container_width=True,
         hide_index=True,
     )
-    
+
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    
+
     st.markdown(
         """
         <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
@@ -760,15 +789,15 @@ with tab_table:
         """,
         unsafe_allow_html=True
     )
-    
+
     choose_nim = st.selectbox(
         "Pilih NIM",
         options=df_out["NIM"].astype(str).tolist(),
         label_visibility="collapsed"
     )
-    
+
     student = df_out[df_out["NIM"].astype(str) == str(choose_nim)].iloc[0]
-    
+
     col1, col2, col3 = st.columns([2, 1, 1])
     with col1:
         st.markdown(f"**Nama:** {student['Nama Lengkap']}")
@@ -779,14 +808,14 @@ with tab_table:
         conf_val = student.get('Confidence', np.nan)
         if pd.notna(conf_val):
             st.metric("Confidence", f"{conf_val:.1f}%")
-    
+
     radar_features = [
         SUBJECT_COLS[0], SUBJECT_COLS[1], SUBJECT_COLS[2],
         SUBJECT_COLS[6], SUBJECT_COLS[9], SUBJECT_COLS[10],
     ]
     vals = [student.get(f, 0) for f in radar_features]
     radar_df = pd.DataFrame({"Feature": radar_features, "Value": vals})
-    
+
     fig_radar = px.line_polar(
         radar_df,
         r="Value",
@@ -794,23 +823,52 @@ with tab_table:
         line_close=True,
         markers=True,
     )
-    fig_radar.update_traces(fill='toself', line_color='#6B0F1A')
-    fig_radar.update_layout(height=400, margin=dict(l=50, r=50, t=50, b=50))
+
+    fig_radar.update_traces(
+        fill='toself',
+        line_color='#6B0F1A'
+    )
+
+    fig_radar.update_layout(
+        height=400,
+        margin=dict(l=50, r=50, t=50, b=50),
+
+        # 🔥 ini kunci transparan
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+    )
+
+    # optional: bikin grid juga lebih clean (opsional tapi bagus)
+    fig_radar.update_polars(
+        bgcolor='rgba(0,0,0,0)',
+        radialaxis=dict(
+            showline=False,
+            gridcolor='lightgray',
+        ),
+        angularaxis=dict(
+            gridcolor='lightgray',
+        )
+    )
+
     st.plotly_chart(fig_radar, use_container_width=True)
-    
+
     st.markdown(
-        """
-        <div class='narasi-box'>
-            <strong>Penjelasan Radar Chart:</strong> Grafik di atas menampilkan profil nilai mahasiswa 
-            dalam 6 mata kuliah utama. Semakin jauh titik dari pusat, semakin tinggi nilainya. 
-            Pola ini membantu visualisasi kekuatan akademik di berbagai bidang.
-        </div>
+        """  
+    <div class='insight-box'>  
+        <div class='insight-title'>  
+            <i class='fas fa-info-circle'></i> Penjelasan 
+        </div>  
+        <div class='insight-text'>Grafik di atas menampilkan profil nilai mahasiswa 
+    dalam 6 mata kuliah utama. Semakin jauh titik dari pusat, semakin tinggi nilainya. 
+    Pola ini membantu visualisasi kekuatan akademik di berbagai bidang.
+        </div>  
+    </div>  
         """,
         unsafe_allow_html=True
     )
 
 # =========================
-# TAB 3: VISUALISASI - FIXED
+# TAB 3: VISUALISASI
 # =========================
 with tab_vis:
     st.markdown(
@@ -821,10 +879,10 @@ with tab_vis:
         """,
         unsafe_allow_html=True
     )
-    
+
     # ========== KPI CARDS ==========
     col1, col2, col3 = st.columns(3, gap="large")
-    
+
     with col1:
         st.markdown(
             f"""
@@ -837,7 +895,7 @@ with tab_vis:
             """,
             unsafe_allow_html=True
         )
-    
+
     with col2:
         st.markdown(
             f"""
@@ -850,7 +908,7 @@ with tab_vis:
             """,
             unsafe_allow_html=True
         )
-    
+
     with col3:
         st.markdown(
             f"""
@@ -863,9 +921,9 @@ with tab_vis:
             """,
             unsafe_allow_html=True
         )
-    
+
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    
+
     # ========== LAYOUT 2 KOLOM: DONUT & PENJELASAN ==========
     col_chart, col_explanation = st.columns([1.3, 1], gap="large")
 
@@ -879,10 +937,10 @@ with tab_vis:
             """,
             unsafe_allow_html=True
         )
-        
+
         try:
             pred_counts_safe = pred_counts.reindex(["SAGE", "DELTA"]).fillna(0).astype(int)
-            
+
             fig_donut = go.Figure(
                 data=[go.Pie(
                     labels=["SAGE", "DELTA"],
@@ -902,38 +960,105 @@ with tab_vis:
                 plot_bgcolor="rgba(0,0,0,0)"
             )
             st.plotly_chart(fig_donut, use_container_width=True)
-            
+
         except Exception as e:
             st.error(f"❌ Error rendering donut chart: {str(e)}")
 
-    # ========== KOLOM KANAN: PENJELASAN DONUT CHART (MIDDLE RIGHT) ==========  
+    # ========== KOLOM KANAN: PENJELASAN DONUT CHART (MIDDLE RIGHT) ==========
     with col_explanation:
         # Vertical spacer untuk menempatkan box di tengah
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-        
+
         st.markdown(
-            """
-            <div style='padding: 20px; background: linear-gradient(135deg, rgba(107, 15, 26, 0.08) 0%, rgba(107, 15, 26, 0.04) 100%); border-left: 4px solid #6B0F1A; border-radius: 8px; font-size: 14px; line-height: 1.8; color: #374151;'>
-                <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;'>
-                    <i class='fas fa-lightbulb'></i> Penjelasan
-                </div>
-                <strong style='color: #6B0F1A; font-size: 15px; display: block; margin-bottom: 12px;'>Penjelasan Donut Chart:</strong>
-                Visualisasi ini menampilkan proporsi distribusi mahasiswa antara dua laboratorium. Warna <strong style='color: #6B0F1A;'>maroon</strong> merepresentasikan <strong>SAGE (Software & Development)</strong>, sedangkan warna <strong style='color: #6B7280;'>abu-abu</strong> merepresentasikan <strong>DELTA (Data & Analytics)</strong>. Ukuran setiap slice menunjukkan persentase mahasiswa yang termasuk dalam setiap laboratorium.
-            </div>
+            """  
+        <div class='insight-box'>  
+            <div class='insight-title'>  
+                <i class='fas fa-info-circle'></i> Penjelasan 
+            </div>  
+            <div class='insight-text'>
+            Visualisasi ini menampilkan proporsi distribusi mahasiswa antara dua laboratorium. Warna maroon merepresentasikan SAGE (Software & Development), sedangkan warna abu-abu merepresentasikan DELTA (Data & Analytics). Ukuran setiap slice menunjukkan persentase mahasiswa yang termasuk dalam setiap laboratorium.
+            </div>  
+        </div>  
             """,
             unsafe_allow_html=True
         )
 
-
-    
+    # ========== FEATURE IMPORTANCE SECTION ==========
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    
-# ========== BAR CHART: DISTRIBUSI CONFIDENCE LEVEL ==========
     st.markdown(
-        """
-        <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
-            <i class='fas fa-chart-bar'></i> Distribusi Confidence Level Prediksi
-        </div>
+        """  
+        <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>  
+            <i class='fas fa-star'></i> Faktor Paling Berpengaruh  
+        </div>  
+        """,
+        unsafe_allow_html=True
+    )
+
+    try:
+        if hasattr(model, "feature_importances_"):
+            fi_df = pd.DataFrame({
+                "Feature": FEATURE_COLS,
+                "Importance": model.feature_importances_
+            })
+            # Urutkan dari yang terbesar ke terkecil agar yang terbesar muncul di atas grafik
+            fi_df = fi_df.sort_values("Importance", ascending=True).tail()
+
+            fig_fi = go.Figure(
+                data=[go.Bar(
+                    x=fi_df["Importance"].values,
+                    y=fi_df["Feature"].values,
+                    orientation="h",
+                    marker=dict(
+                        color="#6B0F1A",  # Warna maroon
+                        line=dict(color="#4A0A13", width=1),
+                        opacity=0.85
+                    ),
+                    text=fi_df["Importance"].apply(lambda x: f"{x:.4f}"),
+                    textposition="outside",
+                    hovertemplate="<b>%{y}</b><br>Importance: %{x:.4f}<extra></extra>"
+                )]
+            )
+
+            fig_fi.update_layout(
+                height=350,
+                margin=dict(l=250, r=20, t=20, b=50),
+                xaxis_title="Importance Score",
+                showlegend=False,
+                font=dict(size=11),
+                plot_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang plot transparan
+                paper_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang kertas transparan
+                xaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", zeroline=False),
+                yaxis=dict(showgrid=False, zeroline=False)
+            )
+
+            st.plotly_chart(fig_fi, use_container_width=True)
+
+            st.markdown(
+                """  
+            <div class='insight-box'>  
+                <div class='insight-title'>  
+                    <i class='fas fa-info-circle'></i> Penjelasan 
+                </div>  
+                <div class='insight-text'>  
+                    Grafik di atas menunjukkan 5 faktor (mata kuliah atau aktivitas) yang paling berpengaruh dalam prediksi peminatan laboratorium, diurutkan dari yang paling tidak penting ke paling penting. Nilai importance yang lebih tinggi berarti faktor tersebut memiliki kontribusi lebih besar dalam keputusan model. Semakin panjang bar, semakin penting fitur tersebut.  
+                </div>  
+            </div>  
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            st.info("ℹ️ Model tidak memiliki informasi feature importance")
+
+    except Exception as e:
+        st.error(f"❌ Error menampilkan feature importance: {str(e)}")
+
+    # ========== BAR CHART: DISTRIBUSI CONFIDENCE LEVEL ==========
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    st.markdown(
+        """  
+        <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>  
+            <i class='fas fa-chart-bar'></i> Distribusi Confidence Level Prediksi  
+        </div>  
         """,
         unsafe_allow_html=True
     )
@@ -946,13 +1071,13 @@ with tab_vis:
             # Membuat kategori confidence dan menghitung frekuensi
             if "Confidence" in df_out.columns:
                 confidence_data = df_out["Confidence"].dropna()
-                
+
                 # Binning confidence ke dalam kategori
                 bins = [0, 25, 50, 75, 100]
                 labels = ["0-25%", "25-50%", "50-75%", "75-100%"]
                 confidence_binned = pd.cut(confidence_data, bins=bins, labels=labels, right=True)
                 confidence_counts = confidence_binned.value_counts().sort_index()
-                
+
                 fig_bar = go.Figure(
                     data=[go.Bar(
                         x=confidence_counts.index.astype(str),
@@ -968,7 +1093,7 @@ with tab_vis:
                         name="Mahasiswa"
                     )]
                 )
-                
+
                 fig_bar.update_layout(
                     height=400,
                     margin=dict(l=60, r=20, t=20, b=50),
@@ -976,68 +1101,70 @@ with tab_vis:
                     yaxis_title="Jumlah Mahasiswa",
                     showlegend=False,
                     font=dict(size=12),
-                    plot_bgcolor="rgba(255, 255, 255, 0.8)",
-                    paper_bgcolor="rgba(0, 0, 0, 0)",
+                    # --- PERUBAHAN DI SINI ---
+                    plot_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang plot transparan
+                    paper_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang kertas transparan
+                    # --- AKHIR PERUBAHAN ---
                     xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor="#E5E7EB"),
-                    yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1, linecolor="#E5E7EB"),
+                    yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1,
+                               linecolor="#E5E7EB"),
                     hovermode="x unified"
                 )
-                
+
                 st.plotly_chart(fig_bar, use_container_width=True)
             else:
                 st.warning("⚠️ Kolom Confidence tidak ditemukan")
-                
+
         except Exception as e:
             st.error(f"❌ Error rendering bar chart: {str(e)}")
 
-    # ========== KOLOM KANAN: PENJELASAN BAR CHART (MIDDLE RIGHT) ==========
+            # ========== KOLOM KANAN: PENJELASAN BAR CHART (MIDDLE RIGHT) ==========
     with col_bar_explanation:
         # Vertical spacer untuk menempatkan box di tengah
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-        
+
         st.markdown(
-            """
-            <div style='padding: 20px; background: linear-gradient(135deg, rgba(107, 15, 26, 0.08) 0%, rgba(107, 15, 26, 0.04) 100%); border-left: 4px solid #6B0F1A; border-radius: 8px; font-size: 14px; line-height: 1.8; color: #374151;'>
-                <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;'>
-                    <i class='fas fa-lightbulb'></i> Penjelasan
-                </div>
-                <strong style='color: #6B0F1A; font-size: 15px; display: block; margin-bottom: 12px;'>Penjelasan Bar Chart:</strong>
-                Grafik ini menunjukkan sebaran tingkat confidence (keyakinan) model dalam melakukan prediksi. Semakin tinggi confidence, semakin yakin model dengan keputusannya. Mayoritas mahasiswa seharusnya berada di range 75-100% untuk prediksi yang berkualitas tinggi. Nilai confidence yang tinggi mengindikasikan bahwa model memiliki tingkat akurasi dan reliabilitas yang baik dalam memprediksi peminatan laboratorium mahasiswa.
-            </div>
+            """  
+        <div class='insight-box'>  
+            <div class='insight-title'>  
+                <i class='fas fa-info-circle'></i> Penjelasan 
+            </div>  
+            <div class='insight-text'>Grafik ini menunjukkan sebaran tingkat confidence (keyakinan) model dalam melakukan prediksi. Semakin tinggi confidence, semakin yakin model dengan keputusannya. Mayoritas mahasiswa seharusnya berada di range 75-100% untuk prediksi yang berkualitas tinggi. Nilai confidence yang tinggi mengindikasikan bahwa model memiliki tingkat akurasi dan reliabilitas yang baik dalam memprediksi peminatan laboratorium mahasiswa.
+            </div>  
+        </div>  
             """,
             unsafe_allow_html=True
         )
 
-    
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    
+
     # ========== ADDITIONAL VISUALIZATIONS ==========
     st.markdown(
-        """
-        <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
-            <i class='fas fa-chart-area'></i> Analisis Lanjutan
-        </div>
+        """  
+        <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>  
+            <i class='fas fa-chart-area'></i> Analisis Lanjutan  
+        </div>  
         """,
         unsafe_allow_html=True
     )
-    
+
     col_analysis1, col_analysis2 = st.columns(2, gap="large")
-    
+
     # ========== HISTOGRAM PROBABILITAS SAGE ==========
     with col_analysis1:
         st.markdown(
-            """
-            <div style='font-size: 16px; font-weight: 600; color: #6B0F1A; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;'>
-                <i class='fas fa-chart-column'></i> Distribusi Probabilitas SAGE
-            </div>
+            """  
+            <div style='font-size: 16px; font-weight: 600; color: #6B0F1A; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;'>  
+                <i class='fas fa-chart-column'></i> Distribusi Probabilitas SAGE  
+            </div>  
             """,
             unsafe_allow_html=True
         )
-        
+
         try:
             if "Probabilitas SAGE" in df_out.columns:
                 prob_sage_data = df_out["Probabilitas SAGE"].dropna()
-                
+
                 if len(prob_sage_data) > 0:
                     fig_hist_sage = go.Figure(
                         data=[go.Histogram(
@@ -1059,10 +1186,13 @@ with tab_vis:
                         yaxis_title="Frekuensi",
                         showlegend=False,
                         font=dict(size=11),
-                        plot_bgcolor="rgba(255, 255, 255, 0.8)",
-                        paper_bgcolor="rgba(0, 0, 0, 0)",
+                        # --- PERUBAHAN DI SINI ---
+                        plot_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang plot transparan
+                        paper_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang kertas transparan
+                        # --- AKHIR PERUBAHAN ---
                         xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor="#E5E7EB"),
-                        yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1, linecolor="#E5E7EB"),
+                        yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1,
+                                   linecolor="#E5E7EB"),
                         hovermode="x unified"
                     )
                     st.plotly_chart(fig_hist_sage, use_container_width=True)
@@ -1070,25 +1200,25 @@ with tab_vis:
                     st.warning("⚠️ Tidak ada data Probabilitas SAGE")
             else:
                 st.warning("⚠️ Kolom Probabilitas SAGE tidak ditemukan")
-                
+
         except Exception as e:
             st.error(f"❌ Gagal menampilkan histogram SAGE: {str(e)}")
-    
+
     # ========== HISTOGRAM PROBABILITAS DELTA ==========
     with col_analysis2:
         st.markdown(
-            """
-            <div style='font-size: 16px; font-weight: 600; color: #6B0F1A; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;'>
-                <i class='fas fa-chart-column'></i> Distribusi Probabilitas DELTA
-            </div>
+            """  
+            <div style='font-size: 16px; font-weight: 600; color: #6B0F1A; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;'>  
+                <i class='fas fa-chart-column'></i> Distribusi Probabilitas DELTA  
+            </div>  
             """,
             unsafe_allow_html=True
         )
-        
+
         try:
             if "Probabilitas DELTA" in df_out.columns:
                 prob_delta_data = df_out["Probabilitas DELTA"].dropna()
-                
+
                 if len(prob_delta_data) > 0:
                     fig_hist_delta = go.Figure(
                         data=[go.Histogram(
@@ -1110,10 +1240,13 @@ with tab_vis:
                         yaxis_title="Frekuensi",
                         showlegend=False,
                         font=dict(size=11),
-                        plot_bgcolor="rgba(255, 255, 255, 0.8)",
-                        paper_bgcolor="rgba(0, 0, 0, 0)",
+                        # --- PERUBAHAN DI SINI ---
+                        plot_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang plot transparan
+                        paper_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang kertas transparan
+                        # --- AKHIR PERUBAHAN ---
                         xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor="#E5E7EB"),
-                        yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1, linecolor="#E5E7EB"),
+                        yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1,
+                                   linecolor="#E5E7EB"),
                         hovermode="x unified"
                     )
                     st.plotly_chart(fig_hist_delta, use_container_width=True)
@@ -1121,77 +1254,9 @@ with tab_vis:
                     st.warning("⚠️ Tidak ada data Probabilitas DELTA")
             else:
                 st.warning("⚠️ Kolom Probabilitas DELTA tidak ditemukan")
-                
+
         except Exception as e:
             st.error(f"❌ Gagal menampilkan histogram DELTA: {str(e)}")
-    
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    
-    # ========== FEATURE IMPORTANCE SECTION ==========
-    st.markdown(
-        """
-        <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
-            <i class='fas fa-star'></i> Faktor Paling Berpengaruh
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    try:
-        if hasattr(model, "feature_importances_"):
-            fi_df = pd.DataFrame({
-                "Feature": FEATURE_COLS,
-                "Importance": model.feature_importances_
-            }).sort_values("Importance", ascending=False).head(8)
-            
-            fig_fi = go.Figure(
-                data=[go.Bar(
-                    x=fi_df["Importance"].values,
-                    y=fi_df["Feature"].values,
-                    orientation="h",
-                    marker=dict(
-                        color=fi_df["Importance"].values,
-                        colorscale="Reds",
-                        showscale=True,
-                        colorbar=dict(title="Importance", thickness=15, len=0.7)
-                    ),
-                    text=fi_df["Importance"].apply(lambda x: f"{x:.4f}"),
-                    textposition="outside",
-                    hovertemplate="<b>%{y}</b><br>Importance: %{x:.4f}<extra></extra>"
-                )]
-            )
-            
-            fig_fi.update_layout(
-                height=350,
-                margin=dict(l=250, r=20, t=20, b=50),
-                xaxis_title="Importance Score",
-                showlegend=False,
-                font=dict(size=11),
-                plot_bgcolor="rgba(255, 255, 255, 0.8)",
-                paper_bgcolor="rgba(0, 0, 0, 0)",
-                xaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", zeroline=False),
-                yaxis=dict(showgrid=False, zeroline=False)
-            )
-            
-            st.plotly_chart(fig_fi, use_container_width=True)
-            
-            st.markdown(
-                """
-                <div style='padding: 16px; background-color: #F9FAFB; border-left: 4px solid #6B0F1A; border-radius: 8px; font-size: 13px; line-height: 1.7; color: #374151;'>
-                    <strong style='color: #6B0F1A; display: flex; align-items: center; gap: 8px;'><i class='fas fa-info-circle'></i> Penjelasan:</strong>
-                    Grafik di atas menunjukkan 8 faktor (mata kuliah atau aktivitas) yang paling berpengaruh dalam prediksi peminatan laboratorium. Nilai importance yang lebih tinggi berarti faktor tersebut memiliki kontribusi lebih besar dalam keputusan model. Semakin panjang bar, semakin penting fitur tersebut.
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        else:
-            st.info("ℹ️ Model tidak memiliki informasi feature importance")
-            
-    except Exception as e:
-        st.error(f"❌ Error menampilkan feature importance: {str(e)}")
-
-
-
 
 # =========================
 # TAB 4: EXPORT
@@ -1205,12 +1270,12 @@ with tab_export:
         """,
         unsafe_allow_html=True
     )
-    
+
     out_cols = ["NIM", "Nama Lengkap", "Kelas", "Prediksi Lab", "Probabilitas SAGE", "Probabilitas DELTA", "Confidence"]
     out_df = df_out[out_cols].copy()
-    
+
     col1, col2 = st.columns(2, gap="large")
-    
+
     with col1:
         csv = out_df.to_csv(index=False)
         st.download_button(
@@ -1222,14 +1287,14 @@ with tab_export:
             key="csv_export"
         )
         st.caption("Format: CSV (kompatibel dengan Excel, Google Sheets, dll)")
-    
+
     with col2:
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
             df_out.to_excel(writer, sheet_name="Data Lengkap", index=False)
             out_df.to_excel(writer, sheet_name="Prediksi", index=False)
         buffer.seek(0)
-        
+
         st.download_button(
             "Unduh sebagai Excel",
             buffer,
@@ -1239,9 +1304,9 @@ with tab_export:
             key="excel_export"
         )
         st.caption("Format: Excel (.xlsx) - 2 sheet (Data Lengkap & Prediksi)")
-    
+
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-    
+
     st.markdown(
         """
         <div class='insight-box'>
@@ -1265,9 +1330,10 @@ st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 st.markdown(
     f"""
     <div style='text-align: center; padding: 20px 0; color: {COLORS['text_muted']}; font-size: 12px;'>
-        <i class='fas fa-copyright'></i> {datetime.now().year} Data Driven Decision Version 2.0 | Data Exploration, Learning & Translational Analytics Lab | 
+        <i class='fas fa-copyright'></i> {datetime.now().year} Data Driven Decision Version 2.0 <br>
+        Data Exploration, Learning & Translational Analytics Lab |
         <span style='color: {COLORS['maroon']};'>
-            <strong>δ DELTA Lab</strong>
+            δ Delta Lab
         </span>
     </div>
     """,
