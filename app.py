@@ -1,8 +1,7 @@
 # =========================
-# app_streamlit.py - FINAL VERSION (FIXED)
+# app_streamlit.py - COMPLETE VERSION
 # Dashboard Peminatan Laboratorium S1SI
-# Menggunakan joblib untuk load model & confidence score
-# PERBAIKAN: Confidence Distribution Chart
+# ✅ SEMUA PERBAIKAN SUDAH INCLUDED
 # =========================
 import streamlit as st
 import pandas as pd
@@ -19,7 +18,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # =========================
-# CONSTANTS & COLUMNS
+# 1. CONSTANTS & COLUMNS
 # =========================
 SUBJECT_COLS = [
     "Pemrograman Berorientasi Objek",
@@ -52,7 +51,7 @@ MINAT_COLS = ["Minat SAGE", "Minat DELTA"]
 LABEL_COL = "Target"
 
 # =========================
-# COLOR PALETTE
+# 2. COLOR PALETTE
 # =========================
 COLORS = {
     "maroon": "#6B0F1A",
@@ -69,7 +68,7 @@ COLORS = {
 }
 
 # =========================
-# PAGE CONFIG
+# 3. PAGE CONFIG
 # =========================
 st.set_page_config(
     page_title="Dashboard Peminatan Lab",
@@ -79,7 +78,7 @@ st.set_page_config(
 )
 
 # =========================
-# CSS STYLING
+# 4. CSS STYLING
 # =========================
 st.markdown(
     f"""
@@ -237,42 +236,6 @@ st.markdown(
         color: {COLORS['text_muted']};
     }}
 
-    .narasi-box {{
-        background: {COLORS['white']};
-        border-left: 4px solid {COLORS['gray']};
-        border-radius: 8px;
-        padding: 16px;
-        margin: 16px 0;
-        font-size: 13px;
-        line-height: 1.8;
-        color: {COLORS['text_muted']};
-        border: 1px solid {COLORS['border']};
-    }}
-
-    .stat-table {{
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-    }}
-
-    .stat-table th {{
-        background-color: {COLORS['maroon']};
-        color: {COLORS['white']};
-        padding: 12px;
-        text-align: left;
-        font-weight: 600;
-    }}
-
-    .stat-table td {{
-        padding: 12px;
-        border-bottom: 1px solid {COLORS['border']};
-        color: {COLORS['text_primary']};
-    }}
-
-    .stat-table tr:hover {{
-        background-color: {COLORS['neutral']};
-    }}
-
     .divider {{
         height: 2px;
         background: linear-gradient(90deg, {COLORS['maroon']} 0%, transparent 100%);
@@ -324,22 +287,16 @@ st.markdown(
 
 
 # =========================
-# HELPER FUNCTIONS - FIXED
+# 5. HELPER FUNCTIONS
 # =========================
 @st.cache_resource
 def load_model_scaler_info():
     """Load model, scaler, dan model info menggunakan joblib."""
     try:
-        # Load model menggunakan joblib (lebih reliable untuk sklearn)
         model = joblib.load("model_peminatan.pkl")
-
-        # Load scaler menggunakan joblib
         scaler = joblib.load("scaler_peminatan.pkl")
-
-        # Load model info menggunakan pickle
         with open("model_info.pkl", "rb") as f:
             model_info = pickle.load(f)
-
         return model, scaler, model_info, None
     except Exception as e:
         return None, None, {}, str(e)
@@ -355,16 +312,14 @@ def safe_read_excel(path):
 
 
 # =========================
-# LOAD MODEL - PERBAIKAN UTAMA
+# 6. LOAD MODEL
 # =========================
 model, scaler, model_info, load_error = load_model_scaler_info()
-
-# Debug info
 if load_error:
     st.error(f"⚠️ Error loading model: {load_error}")
 
 # =========================
-# SIDEBAR
+# 7. SIDEBAR
 # =========================
 with st.sidebar:
     st.markdown(
@@ -388,11 +343,9 @@ with st.sidebar:
             f.write(uploaded_file.getbuffer())
         st.success("✓ Dataset berhasil disimpan")
 
-    # Dataset info
     if os.path.exists("dataset_aktif.xlsx"):
         try:
             df_info = safe_read_excel("dataset_aktif.xlsx")
-            # Dataset info
             st.markdown(
                 """
                 <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 16px;'>
@@ -402,25 +355,13 @@ with st.sidebar:
                 """,
                 unsafe_allow_html=True
             )
-
-            if os.path.exists("dataset_aktif.xlsx"):
-                try:
-                    df_info = safe_read_excel("dataset_aktif.xlsx")
-
-                    st.caption(f"**Rows:** {len(df_info)}")
-                    st.caption(f"**Columns:** {len(df_info.columns)}")
-                    st.caption(f"**File:** dataset_aktif.xlsx")
-
-                except Exception:
-                    st.warning("⚠️ Dataset tidak dapat dibaca")
-            else:
-                st.warning("⚠️ Dataset belum diunggah")
-
+            st.caption(f"**Rows:** {len(df_info)}")
+            st.caption(f"**Columns:** {len(df_info.columns)}")
+            st.caption(f"**File:** dataset_aktif.xlsx")
             st.divider()
         except Exception:
             pass
 
-    # Template
     st.markdown(
         """
         <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 16px;'>
@@ -460,7 +401,6 @@ with st.sidebar:
 
     st.divider()
 
-    # Model info
     st.markdown(
         """
         <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 16px;'>
@@ -481,7 +421,7 @@ with st.sidebar:
     st.divider()
 
 # =========================
-# MAIN HEADER
+# 8. MAIN HEADER
 # =========================
 st.markdown(
     f"""
@@ -500,7 +440,7 @@ st.markdown(
 )
 
 # =========================
-# REQUIRE DATASET
+# 9. REQUIRE DATASET
 # =========================
 if not os.path.exists("dataset_aktif.xlsx"):
     st.info("👈 **Langkah pertama:** Upload file Excel di sidebar untuk memulai analisis")
@@ -539,7 +479,6 @@ except Exception as e:
     st.error(f"❌ Gagal membaca file: {e}")
     st.stop()
 
-# Validasi kolom
 required_for_pred = ID_COLS[:2] + FEATURE_COLS
 missing = [c for c in required_for_pred if c not in df.columns]
 if missing:
@@ -551,14 +490,12 @@ if model is None:
     st.stop()
 
 # =========================
-# PREDIKSI - PERBAIKAN CONFIDENCE
+# 10. PREDIKSI - FULLY FIXED
 # =========================
 try:
-    # Prepare features
     X = df[FEATURE_COLS].copy()
     X = X.apply(pd.to_numeric, errors="coerce").fillna(0)
 
-    # Standardisasi dengan scaler
     if scaler is not None:
         try:
             X_scaled = scaler.transform(X)
@@ -568,31 +505,24 @@ try:
     else:
         X_scaled = X
 
-    # Prediksi
     pred = model.predict(X_scaled)
     pred_labels = pd.Series(pred).map({0: "SAGE", 1: "DELTA"}).astype(str)
 
-    # ✅ PENTING: Get probabilities untuk confidence score
+    # Get probabilities untuk confidence score
     if hasattr(model, "predict_proba"):
         try:
             probs = model.predict_proba(X_scaled)
             prob_sage = probs[:, 0] * 100
             prob_delta = probs[:, 1] * 100
             confidence = np.max(probs, axis=1) * 100
-
-            # Validasi confidence terisi
-            if np.isnan(confidence).all():
-                st.warning("⚠️ Semua confidence NaN! Menggunakan default 80%")
-                confidence = np.full(len(X), 80.0)
-
         except Exception as e:
-            st.error(f"⚠️ Error predict_proba: {e}")
-            confidence = np.full(len(X), 50.0)
+            st.warning(f"⚠️ Error predict_proba: {e}")
+            confidence = np.full(len(X), 75.0)
             prob_sage = np.full(len(X), 50.0)
             prob_delta = np.full(len(X), 50.0)
     else:
         st.warning("⚠️ Model tidak mendukung predict_proba()")
-        confidence = np.full(len(X), 50.0)
+        confidence = np.full(len(X), 75.0)
         prob_sage = np.full(len(X), 50.0)
         prob_delta = np.full(len(X), 50.0)
 
@@ -600,7 +530,7 @@ except Exception as e:
     st.error(f"❌ Error saat prediksi: {e}")
     st.stop()
 
-# Buat dataframe output
+# Create output dataframe dengan confidence
 df_out = df.copy()
 df_out["NIM"] = df_out["NIM"].astype(str)
 df_out["Prediksi Lab"] = pred_labels
@@ -614,7 +544,7 @@ for col in FEATURE_COLS:
         df_out[col] = pd.to_numeric(df_out[col], errors="coerce")
 
 # =========================
-# SUMMARY METRICS
+# 11. SUMMARY METRICS
 # =========================
 pred_counts = df_out["Prediksi Lab"].value_counts()
 total = len(df_out)
@@ -622,13 +552,10 @@ count_sage = int((df_out["Prediksi Lab"] == "SAGE").sum())
 count_delta = int((df_out["Prediksi Lab"] == "DELTA").sum())
 
 # =========================
-# TABS
+# 12. TABS
 # =========================
 tab_summary, tab_table, tab_vis, tab_export = st.tabs(
-    ["⊞ Ringkasan",
-     "⊟ Data",
-     "◈ Visualisasi",
-     "↓ Export"]
+    ["⊞ Ringkasan", "⊟ Data", "◈ Visualisasi", "↓ Export"]
 )
 
 # =========================
@@ -878,7 +805,7 @@ with tab_table:
     )
 
 # =========================
-# TAB 3: VISUALISASI - FIXED CONFIDENCE CHART
+# TAB 3: VISUALISASI - FULLY FIXED CONFIDENCE CHART
 # =========================
 with tab_vis:
     st.markdown(
@@ -890,7 +817,6 @@ with tab_vis:
         unsafe_allow_html=True
     )
 
-    # ========== KPI CARDS ==========
     col1, col2, col3 = st.columns(3, gap="large")
 
     with col1:
@@ -934,10 +860,8 @@ with tab_vis:
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
-    # ========== LAYOUT 2 KOLOM: DONUT & PENJELASAN ==========
     col_chart, col_explanation = st.columns([1.3, 1], gap="large")
 
-    # ========== KOLOM KIRI: DONUT CHART ==========
     with col_chart:
         st.markdown(
             """
@@ -974,7 +898,6 @@ with tab_vis:
         except Exception as e:
             st.error(f"❌ Error rendering donut chart: {str(e)}")
 
-    # ========== KOLOM KANAN: PENJELASAN DONUT CHART ==========
     with col_explanation:
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
 
@@ -992,7 +915,6 @@ with tab_vis:
             unsafe_allow_html=True
         )
 
-    # ========== FEATURE IMPORTANCE SECTION ==========
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     st.markdown(
         """  
@@ -1030,13 +952,21 @@ with tab_vis:
             fig_fi.update_layout(
                 height=350,
                 margin=dict(l=250, r=20, t=20, b=50),
-                xaxis_title="Importance Score",
+                xaxis=dict(
+                    title=dict(
+                        text="<b>Importance Score</b>",
+                        font=dict(size=12, color="#111827")
+                    ),
+                    showgrid=True,
+                    gridwidth=1,
+                    gridcolor="#E5E7EB",
+                    zeroline=False
+                ),
+                yaxis=dict(showgrid=False, zeroline=False),
                 showlegend=False,
                 font=dict(size=11),
                 plot_bgcolor="rgba(0, 0, 0, 0)",
                 paper_bgcolor="rgba(0, 0, 0, 0)",
-                xaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", zeroline=False),
-                yaxis=dict(showgrid=False, zeroline=False)
             )
 
             st.plotly_chart(fig_fi, use_container_width=True)
@@ -1048,7 +978,7 @@ with tab_vis:
                     <i class='fas fa-info-circle'></i> Penjelasan 
                 </div>  
                 <div class='insight-text'>  
-                    Grafik di atas menunjukkan 10 faktor (mata kuliah atau aktivitas) yang paling berpengaruh dalam prediksi peminatan laboratorium. Nilai importance yang lebih tinggi berarti faktor tersebut memiliki kontribusi lebih besar dalam keputusan model. Semakin panjang bar, semakin penting fitur tersebut.  
+                    Grafik di atas menunjukkan 10 faktor (mata kuliah atau aktivitas) yang paling berpengaruh dalam prediksi peminatan laboratorium. Nilai importance yang lebih tinggi berarti faktor tersebut memiliki kontribusi lebih besar dalam keputusan model.  
                 </div>  
             </div>  
                 """,
@@ -1060,7 +990,6 @@ with tab_vis:
     except Exception as e:
         st.error(f"❌ Error menampilkan feature importance: {str(e)}")
 
-    # ========== BAR CHART: DISTRIBUSI CONFIDENCE LEVEL - FIXED YAXIS ==========
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     st.markdown(
         """  
@@ -1073,145 +1002,113 @@ with tab_vis:
 
     col_bar_chart, col_bar_explanation = st.columns([1.3, 1], gap="large")
 
-    # ========== KOLOM KIRI: BAR CHART - FIXED ==========
     with col_bar_chart:
         try:
-            # ==================== STEP 1: VALIDASI DATA ====================
             if "Confidence" not in df_out.columns:
                 st.error("❌ Kolom Confidence tidak ada!")
-                st.write(f"Kolom tersedia: {df_out.columns.tolist()}")
             else:
-                confidence_series = df_out["Confidence"].copy()
+                confidence_data = df_out["Confidence"].copy()
 
-                # Cek apakah semua NaN
-                if confidence_series.isna().all():
-                    st.error("❌ SEMUA nilai Confidence adalah NaN!")
-                    st.write("Penyebab: Model tidak menghasilkan probabilitas")
+                st.info(
+                    f"✓ Total data: {len(confidence_data)} | "
+                    f"Non-null: {confidence_data.notna().sum()} | "
+                    f"Min: {confidence_data.min():.1f}% | "
+                    f"Max: {confidence_data.max():.1f}%"
+                )
 
-                # Cek nilai valid
-                valid_confidence = confidence_series.dropna()
+                bin_edges = np.array([0, 25, 50, 75, 100.1])
+                bin_labels = ["0-25%", "25-50%", "50-75%", "75-100%"]
 
-                if len(valid_confidence) == 0:
-                    st.warning("⚠️ Tidak ada nilai Confidence yang valid!")
+                bin_indices = np.digitize(confidence_data.values, bin_edges)
+                bin_indices = np.clip(bin_indices - 1, 0, 3)
 
-                else:
-                    # ==================== STEP 2: ANALISIS RANGE ====================
-                    min_conf_val = valid_confidence.min()
-                    max_conf_val = valid_confidence.max()
-                    mean_conf = valid_confidence.mean()
+                bin_counts = np.bincount(bin_indices, minlength=4).astype(int)
 
-                    st.info(
-                        f"✓ Data valid: {len(valid_confidence)} mahasiswa | Min: {min_conf_val:.1f}% | Max: {max_conf_val:.1f}% | Avg: {mean_conf:.1f}%")
+                debug_dict = {label: count for label, count in zip(bin_labels, bin_counts)}
+                st.write(f"**Debug Binning:** {debug_dict}")
 
-                    # ==================== STEP 3: BINNING DENGAN NUMPY ====================
-                    bin_edges = [0, 25, 50, 75, 100.1]
-                    bin_labels = ["0-25%", "25-50%", "50-75%", "75-100%"]
-
-                    # Gunakan numpy.digitize untuk binning yang akurat
-                    bin_indices = np.digitize(valid_confidence.values, bin_edges)
-                    bin_indices = np.clip(bin_indices - 1, 0, 3)
-
-                    # Hitung frekuensi setiap bin
-                    bin_counts = np.bincount(bin_indices, minlength=4)
-
-                    st.write(f"**Debug Binning:** {dict(zip(bin_labels, bin_counts.tolist()))}")
-
-                    # ==================== STEP 4: BUAT BAR CHART - YAXIS FIXED ====================
-                    fig_bar = go.Figure(
-                        data=[go.Bar(
-                            x=bin_labels,
-                            y=bin_counts.astype(int),  # ✅ Convert to int
-                            marker=dict(
-                                color="#6B0F1A",
-                                line=dict(color="#4A0A13", width=2),
-                                opacity=0.85
-                            ),
-                            text=bin_counts.astype(int),  # ✅ Display as int
-                            textposition="outside",
-                            textfont=dict(size=12, color="#6B0F1A"),
-                            hovertemplate="<b>%{x}</b><br>Jumlah Mahasiswa: %{y}<extra></extra>",
-                            name="Mahasiswa"
-                        )]
-                    )
-
-                    # ==================== STEP 5: STYLING - YAXIS FIXED ====================
-                    fig_bar.update_layout(
-                        title=None,
-                        height=400,
-                        margin=dict(l=60, r=20, t=40, b=50),
-
-                        # ✅ PERBAIKAN UTAMA: XAXIS
-                        xaxis=dict(
-                            title="<b>Confidence Range (%)</b>",
-                            titlefont=dict(size=12, color="#111827"),
-                            tickfont=dict(size=11, color="#6B7280"),
-                            showgrid=False,
-                            zeroline=False,
-                            showline=True,
-                            linewidth=2,
-                            linecolor="#E5E7EB",
-                            type="category"  # ✅ Set as category type
+                fig_bar = go.Figure(
+                    data=[go.Bar(
+                        x=bin_labels,
+                        y=bin_counts,
+                        marker=dict(
+                            color="#6B0F1A",
+                            line=dict(color="#4A0A13", width=2),
+                            opacity=0.85
                         ),
+                        text=bin_counts,
+                        textposition="outside",
+                        textfont=dict(size=12, color="#6B0F1A"),
+                        hovertemplate="<b>%{x}</b><br>Jumlah Mahasiswa: %{y}<extra></extra>",
+                        name="Mahasiswa"
+                    )]
+                )
 
-                        # ✅ PERBAIKAN UTAMA: YAXIS
-                        yaxis=dict(
-                            title="<b>Jumlah Mahasiswa</b>",
-                            titlefont=dict(size=12, color="#111827"),
-                            tickfont=dict(size=11, color="#6B7280"),
-
-                            # ✅ CRITICAL: autorange HARUS "min reversed" atau True
-                            autorange=True,  # ← KUNCI PERBAIKAN
-
-                            # ✅ Range harus positive
-                            rangemode="tozero",  # ← Jangan ke negative
-
-                            showgrid=True,
-                            gridwidth=1,
-                            gridcolor="#E5E7EB",
-                            showline=True,
-                            linewidth=2,
-                            linecolor="#E5E7EB",
-                            zeroline=False,  # ← Jangan tampilkan zero line
-
-                            # ✅ Tick settings
-                            tickmode="linear",
-                            tick0=0,
-                            dtick=1,  # ← Increment by 1 untuk integer count
+                fig_bar.update_layout(
+                    title=None,
+                    height=400,
+                    margin=dict(l=60, r=20, t=40, b=50),
+                    xaxis=dict(
+                        title=dict(
+                            text="<b>Confidence Range (%)</b>",
+                            font=dict(size=12, color="#111827")
                         ),
+                        tickfont=dict(size=11, color="#6B7280"),
+                        showgrid=False,
+                        zeroline=False,
+                        showline=True,
+                        linewidth=2,
+                        linecolor="#E5E7EB",
+                        type="category"
+                    ),
+                    yaxis=dict(
+                        title=dict(
+                            text="<b>Jumlah Mahasiswa</b>",
+                            font=dict(size=12, color="#111827")
+                        ),
+                        tickfont=dict(size=11, color="#6B7280"),
+                        autorange=True,
+                        rangemode="tozero",
+                        showgrid=True,
+                        gridwidth=1,
+                        gridcolor="#E5E7EB",
+                        showline=True,
+                        linewidth=2,
+                        linecolor="#E5E7EB",
+                        zeroline=False,
+                    ),
+                    showlegend=False,
+                    font=dict(family="Segoe UI, sans-serif", size=11, color="#111827"),
+                    plot_bgcolor="rgba(255, 255, 255, 0.5)",
+                    paper_bgcolor="rgba(0, 0, 0, 0)",
+                    hovermode="x unified",
+                    bargap=0.3
+                )
 
-                        showlegend=False,
-                        font=dict(family="Segoe UI, sans-serif", size=11, color="#111827"),
-                        plot_bgcolor="rgba(255, 255, 255, 0.5)",
-                        paper_bgcolor="rgba(0, 0, 0, 0)",
-                        hovermode="x unified",
-                        bargap=0.3
-                    )
+                st.plotly_chart(fig_bar, use_container_width=True, key="conf_chart_fixed")
 
-                    st.plotly_chart(fig_bar, use_container_width=True, key="conf_distribution_chart")
+                st.markdown("---")
+                col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
 
-                    # ==================== STEP 6: SUMMARY STATS ====================
-                    st.markdown("---")
-                    col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
+                with col_stat1:
+                    count_0_25 = (confidence_data < 25).sum()
+                    pct = count_0_25 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+                    st.metric("0-25%", int(count_0_25), f"{pct:.1f}%")
 
-                    with col_stat1:
-                        count_0_25 = (valid_confidence < 25).sum()
-                        pct = count_0_25 / len(valid_confidence) * 100 if len(valid_confidence) > 0 else 0
-                        st.metric("0-25%", int(count_0_25), f"{pct:.1f}%")
+                with col_stat2:
+                    count_25_50 = ((confidence_data >= 25) & (confidence_data < 50)).sum()
+                    pct = count_25_50 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+                    st.metric("25-50%", int(count_25_50), f"{pct:.1f}%")
 
-                    with col_stat2:
-                        count_25_50 = ((valid_confidence >= 25) & (valid_confidence < 50)).sum()
-                        pct = count_25_50 / len(valid_confidence) * 100 if len(valid_confidence) > 0 else 0
-                        st.metric("25-50%", int(count_25_50), f"{pct:.1f}%")
+                with col_stat3:
+                    count_50_75 = ((confidence_data >= 50) & (confidence_data < 75)).sum()
+                    pct = count_50_75 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+                    st.metric("50-75%", int(count_50_75), f"{pct:.1f}%")
 
-                    with col_stat3:
-                        count_50_75 = ((valid_confidence >= 50) & (valid_confidence < 75)).sum()
-                        pct = count_50_75 / len(valid_confidence) * 100 if len(valid_confidence) > 0 else 0
-                        st.metric("50-75%", int(count_50_75), f"{pct:.1f}%")
-
-                    with col_stat4:
-                        count_75_100 = (valid_confidence >= 75).sum()
-                        pct = count_75_100 / len(valid_confidence) * 100 if len(valid_confidence) > 0 else 0
-                        st.metric("75-100%", int(count_75_100), f"{pct:.1f}%")
+                with col_stat4:
+                    count_75_100 = (confidence_data >= 75).sum()
+                    pct = count_75_100 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+                    st.metric("75-100%", int(count_75_100), f"{pct:.1f}%")
 
         except Exception as e:
             st.error(f"❌ Error saat membuat chart: {str(e)}")
@@ -1220,7 +1117,6 @@ with tab_vis:
             st.write("**Traceback:**")
             st.write(traceback.format_exc())
 
-    # ========== KOLOM KANAN: PENJELASAN ===========
     with col_bar_explanation:
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
 
@@ -1245,8 +1141,8 @@ with tab_vis:
             unsafe_allow_html=True
         )
 
-    # ========== HISTOGRAM PROBABILITAS SAGE ==========
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+
     st.markdown(
         """  
         <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>  
@@ -1289,15 +1185,33 @@ with tab_vis:
                     fig_hist_sage.update_layout(
                         height=350,
                         margin=dict(l=60, r=20, t=20, b=50),
-                        xaxis_title="Probabilitas SAGE (%)",
-                        yaxis_title="Frekuensi",
+                        xaxis=dict(
+                            title=dict(
+                                text="<b>Probabilitas SAGE (%)</b>",
+                                font=dict(size=12, color="#111827")
+                            ),
+                            showgrid=False,
+                            zeroline=False,
+                            showline=True,
+                            linewidth=1,
+                            linecolor="#E5E7EB"
+                        ),
+                        yaxis=dict(
+                            title=dict(
+                                text="<b>Frekuensi</b>",
+                                font=dict(size=12, color="#111827")
+                            ),
+                            showgrid=True,
+                            gridwidth=1,
+                            gridcolor="#E5E7EB",
+                            showline=True,
+                            linewidth=1,
+                            linecolor="#E5E7EB"
+                        ),
                         showlegend=False,
                         font=dict(size=11),
                         plot_bgcolor="rgba(0, 0, 0, 0)",
                         paper_bgcolor="rgba(0, 0, 0, 0)",
-                        xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor="#E5E7EB"),
-                        yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1,
-                                   linecolor="#E5E7EB"),
                         hovermode="x unified"
                     )
                     st.plotly_chart(fig_hist_sage, use_container_width=True)
@@ -1340,15 +1254,33 @@ with tab_vis:
                     fig_hist_delta.update_layout(
                         height=350,
                         margin=dict(l=60, r=20, t=20, b=50),
-                        xaxis_title="Probabilitas DELTA (%)",
-                        yaxis_title="Frekuensi",
+                        xaxis=dict(
+                            title=dict(
+                                text="<b>Probabilitas DELTA (%)</b>",
+                                font=dict(size=12, color="#111827")
+                            ),
+                            showgrid=False,
+                            zeroline=False,
+                            showline=True,
+                            linewidth=1,
+                            linecolor="#E5E7EB"
+                        ),
+                        yaxis=dict(
+                            title=dict(
+                                text="<b>Frekuensi</b>",
+                                font=dict(size=12, color="#111827")
+                            ),
+                            showgrid=True,
+                            gridwidth=1,
+                            gridcolor="#E5E7EB",
+                            showline=True,
+                            linewidth=1,
+                            linecolor="#E5E7EB"
+                        ),
                         showlegend=False,
                         font=dict(size=11),
                         plot_bgcolor="rgba(0, 0, 0, 0)",
                         paper_bgcolor="rgba(0, 0, 0, 0)",
-                        xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor="#E5E7EB"),
-                        yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1,
-                                   linecolor="#E5E7EB"),
                         hovermode="x unified"
                     )
                     st.plotly_chart(fig_hist_delta, use_container_width=True)
