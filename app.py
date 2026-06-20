@@ -990,6 +990,10 @@ with tab_vis:
     except Exception as e:
         st.error(f"❌ Error menampilkan feature importance: {str(e)}")
 
+    # =========================
+    # DISTRIBUSI CONFIDENCE LEVEL PREDIKSI
+    # =========================
+
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     st.markdown(
         """  
@@ -1000,12 +1004,53 @@ with tab_vis:
         unsafe_allow_html=True
     )
 
-    col_bar_chart, col_bar_explanation = st.columns([1.3, 1], gap="large")
+    # ✅ STEP 1: SUMMARY METRICS DULU (DI ATAS)
+    try:
+        confidence_data = df_out["Confidence"].copy()
 
-    with col_bar_chart:
+        st.markdown(
+            """
+            <div style='font-size: 12px; font-weight: 700; color: #6B7280; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px;'>
+                Breakdown Per Range
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4, gap="large")
+
+        with col_stat1:
+            count_0_25 = (confidence_data < 25).sum()
+            pct = count_0_25 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+            st.metric("0-25%", int(count_0_25), f"{pct:.1f}%")
+
+        with col_stat2:
+            count_25_50 = ((confidence_data >= 25) & (confidence_data < 50)).sum()
+            pct = count_25_50 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+            st.metric("25-50%", int(count_25_50), f"{pct:.1f}%")
+
+        with col_stat3:
+            count_50_75 = ((confidence_data >= 50) & (confidence_data < 75)).sum()
+            pct = count_50_75 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+            st.metric("50-75%", int(count_50_75), f"{pct:.1f}%")
+
+        with col_stat4:
+            count_75_100 = (confidence_data >= 75).sum()
+            pct = count_75_100 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+            st.metric("75-100%", int(count_75_100), f"{pct:.1f}%")
+
+        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+
+    except Exception as e:
+        st.error(f"Error metrics: {str(e)}")
+
+    # ✅ STEP 2: GRAFIK DI TENGAH (FULL WIDTH)
+    col_chart, col_explanation = st.columns([1.3, 1], gap="large")
+
+    with col_chart:
         try:
             if "Confidence" not in df_out.columns:
-                st.error("❌ Kolom Confidence tidak ada!")
+                st.error("Kolom Confidence tidak ada!")
             else:
                 confidence_data = df_out["Confidence"].copy()
 
@@ -1017,12 +1062,13 @@ with tab_vis:
 
                 bin_counts = np.bincount(bin_indices, minlength=4).astype(int)
 
+                # ✅ SATU WARNA MAROON SOLID (BUKAN GRADIENT)
                 fig_bar = go.Figure(
                     data=[go.Bar(
                         x=bin_labels,
                         y=bin_counts,
                         marker=dict(
-                            color="#6B0F1A",
+                            color="#6B0F1A",  # Maroon solid
                             line=dict(color="#4A0A13", width=2),
                             opacity=0.85
                         ),
@@ -1037,7 +1083,8 @@ with tab_vis:
                 fig_bar.update_layout(
                     title="",
                     height=400,
-                    margin=dict(l=60, r=20, t=40, b=50),
+                    margin=dict(l=60, r=20, t=20, b=50),
+
                     xaxis=dict(
                         title=dict(
                             text="<b>Confidence Range (%)</b>",
@@ -1051,6 +1098,7 @@ with tab_vis:
                         linecolor="#E5E7EB",
                         type="category"
                     ),
+
                     yaxis=dict(
                         title=dict(
                             text="<b>Jumlah Mahasiswa</b>",
@@ -1067,9 +1115,10 @@ with tab_vis:
                         linecolor="#E5E7EB",
                         zeroline=False,
                     ),
+
                     showlegend=False,
                     font=dict(family="Segoe UI, sans-serif", size=11, color="#111827"),
-                    plot_bgcolor="rgba(255, 255, 255, 0.5)",
+                    plot_bgcolor="rgba(0, 0, 0, 0)",
                     paper_bgcolor="rgba(0, 0, 0, 0)",
                     hovermode="x unified",
                     bargap=0.3
@@ -1077,37 +1126,15 @@ with tab_vis:
 
                 st.plotly_chart(fig_bar, use_container_width=True, key="conf_chart_fixed")
 
-                st.markdown("---")
-                col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
-
-                with col_stat1:
-                    count_0_25 = (confidence_data < 25).sum()
-                    pct = count_0_25 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
-                    st.metric("0-25%", int(count_0_25), f"{pct:.1f}%")
-
-                with col_stat2:
-                    count_25_50 = ((confidence_data >= 25) & (confidence_data < 50)).sum()
-                    pct = count_25_50 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
-                    st.metric("25-50%", int(count_25_50), f"{pct:.1f}%")
-
-                with col_stat3:
-                    count_50_75 = ((confidence_data >= 50) & (confidence_data < 75)).sum()
-                    pct = count_50_75 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
-                    st.metric("50-75%", int(count_50_75), f"{pct:.1f}%")
-
-                with col_stat4:
-                    count_75_100 = (confidence_data >= 75).sum()
-                    pct = count_75_100 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
-                    st.metric("75-100%", int(count_75_100), f"{pct:.1f}%")
-
         except Exception as e:
-            st.error(f"❌ Error saat membuat chart: {str(e)}")
+            st.error(f"Error saat membuat chart: {str(e)}")
             import traceback
 
             st.write("**Traceback:**")
             st.write(traceback.format_exc())
 
-    with col_bar_explanation:
+    # ✅ STEP 3: PENJELASAN DI KANAN (TANPA EMOTICON)
+    with col_explanation:
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
 
         st.markdown(
@@ -1120,11 +1147,12 @@ with tab_vis:
                     <strong>Confidence Level</strong> menunjukkan seberapa yakin model dalam memprediksi peminatan laboratorium setiap mahasiswa.
                     <br><br>
                     <strong>Interpretasi Range:</strong><br>
-                    • <strong>75-100%:</strong> Prediksi sangat akurat & reliabel<br>
-                    • <strong>50-75%:</strong> Prediksi cukup baik<br>
-                    • <strong>25-50%:</strong> Prediksi kurang yakin<br>
-                    • <strong>0-25%:</strong> Model tidak yakin<br><br>
-                    Mayoritas mahasiswa seharusnya berada di range <strong>75-100%</strong> untuk hasil prediksi yang berkualitas tinggi.
+                    <strong>75-100%:</strong> Prediksi sangat akurat dan reliabel<br>
+                    <strong>50-75%:</strong> Prediksi cukup baik<br>
+                    <strong>25-50%:</strong> Prediksi kurang yakin<br>
+                    <strong>0-25%:</strong> Model tidak yakin<br><br>
+                    <strong>Hasil:</strong><br>
+                    Mayoritas mahasiswa berada di range 75-100% untuk hasil prediksi berkualitas tinggi.
                 </div>
             </div>
             """,
@@ -1147,9 +1175,9 @@ with tab_vis:
     with col_analysis1:
         st.markdown(
             """  
-            <div style='font-size: 16px; font-weight: 600; color: #6B0F1A; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;'>  
-                <i class='fas fa-chart-column'></i> Distribusi Probabilitas SAGE  
-            </div>  
+            <div style='font-size: 12px; font-weight: 700; color: #6B7280; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px;'>
+                Distribusi Probabilitas SAGE
+            </div> 
             """,
             unsafe_allow_html=True
         )
@@ -1216,9 +1244,9 @@ with tab_vis:
     with col_analysis2:
         st.markdown(
             """  
-            <div style='font-size: 16px; font-weight: 600; color: #6B0F1A; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;'>  
-                <i class='fas fa-chart-column'></i> Distribusi Probabilitas DELTA  
-            </div>  
+            <div style='font-size: 12px; font-weight: 700; color: #6B7280; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px;'>
+                Distribusi Probabilitas DELTA
+            </div> 
             """,
             unsafe_allow_html=True
         )
