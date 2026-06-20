@@ -1009,13 +1009,6 @@ with tab_vis:
             else:
                 confidence_data = df_out["Confidence"].copy()
 
-                st.info(
-                    f"✓ Total data: {len(confidence_data)} | "
-                    f"Non-null: {confidence_data.notna().sum()} | "
-                    f"Min: {confidence_data.min():.1f}% | "
-                    f"Max: {confidence_data.max():.1f}%"
-                )
-
                 bin_edges = np.array([0, 25, 50, 75, 100.1])
                 bin_labels = ["0-25%", "25-50%", "50-75%", "75-100%"]
 
@@ -1023,9 +1016,6 @@ with tab_vis:
                 bin_indices = np.clip(bin_indices - 1, 0, 3)
 
                 bin_counts = np.bincount(bin_indices, minlength=4).astype(int)
-
-                debug_dict = {label: count for label, count in zip(bin_labels, bin_counts)}
-                st.write(f"**Debug Binning:** {debug_dict}")
 
                 fig_bar = go.Figure(
                     data=[go.Bar(
@@ -1045,7 +1035,7 @@ with tab_vis:
                 )
 
                 fig_bar.update_layout(
-                    title=None,
+                    title="",
                     height=400,
                     margin=dict(l=60, r=20, t=40, b=50),
                     xaxis=dict(
@@ -1129,11 +1119,11 @@ with tab_vis:
                 <div class='insight-text'>
                     <strong>Confidence Level</strong> menunjukkan seberapa yakin model dalam memprediksi peminatan laboratorium setiap mahasiswa.
                     <br><br>
-                    📊 <strong>Interpretasi Range:</strong><br>
-                    • <strong>75-100%:</strong> Prediksi sangat akurat & reliabel ✅<br>
-                    • <strong>50-75%:</strong> Prediksi cukup baik ⚠️<br>
-                    • <strong>25-50%:</strong> Prediksi kurang yakin ⚠️⚠️<br>
-                    • <strong>0-25%:</strong> Model tidak yakin ❌<br><br>
+                    <strong>Interpretasi Range:</strong><br>
+                    • <strong>75-100%:</strong> Prediksi sangat akurat & reliabel<br>
+                    • <strong>50-75%:</strong> Prediksi cukup baik<br>
+                    • <strong>25-50%:</strong> Prediksi kurang yakin<br>
+                    • <strong>0-25%:</strong> Model tidak yakin<br><br>
                     Mayoritas mahasiswa seharusnya berada di range <strong>75-100%</strong> untuk hasil prediksi yang berkualitas tinggi.
                 </div>
             </div>
