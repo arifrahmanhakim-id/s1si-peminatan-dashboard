@@ -1,7 +1,8 @@
 # =========================
-# app_streamlit.py - FINAL VERSION
+# app_streamlit.py - FINAL VERSION (FIXED)
 # Dashboard Peminatan Laboratorium S1SI
 # Menggunakan joblib untuk load model & confidence score
+# PERBAIKAN: Confidence Distribution Chart
 # =========================
 import streamlit as st
 import pandas as pd
@@ -84,17 +85,17 @@ st.markdown(
     f"""
     <link rel="stylesheet" 
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    
+
     <style>
     /* ===== GLOBAL ===== */
     * {{
         font-family: 'Segoe UI', 'Helvetica Neue', -apple-system, sans-serif;
     }}
-    
+
     .stApp {{
         background-color: {COLORS['neutral']};
     }}
-    
+
     /* ===== HEADER ===== */
     .header-container {{
         padding: 28px 0;
@@ -102,7 +103,7 @@ st.markdown(
         margin-bottom: 28px;
         background: linear-gradient(135deg, rgba(107, 15, 26, 0.03) 0%, rgba(107, 15, 26, 0.01) 100%);
     }}
-    
+
     .header-title {{
         font-size: 32px;
         font-weight: 700;
@@ -112,19 +113,19 @@ st.markdown(
         align-items: center;
         gap: 16px;
     }}
-    
+
     .header-title i {{
         font-size: 36px;
         color: {COLORS['maroon']};
     }}
-    
+
     .header-subtitle {{
         font-size: 14px;
         color: {COLORS['text_muted']};
         margin: 12px 0 0 52px;
         line-height: 1.6;
     }}
-    
+
     /* ===== KPI CARD ===== */
     .kpi-card {{
         background: {COLORS['white']};
@@ -141,7 +142,7 @@ st.markdown(
         overflow: hidden;
         min-height: 160px;
     }}
-    
+
     .kpi-card::before {{
         content: '';
         position: absolute;
@@ -151,12 +152,12 @@ st.markdown(
         height: 100%;
         background: var(--accent-color);
     }}
-    
+
     .kpi-card:hover {{
         box-shadow: 0 12px 32px rgba(107, 15, 26, 0.2);
         transform: translateY(-6px);
     }}
-    
+
     .kpi-label {{
         font-size: 11px;
         color: {COLORS['text_muted']};
@@ -167,7 +168,7 @@ st.markdown(
         grid-row: 1;
         margin: 0;
     }}
-    
+
     .kpi-value {{
         font-size: 48px;
         font-weight: 900;
@@ -178,7 +179,7 @@ st.markdown(
         margin: 0;
         letter-spacing: -1px;
     }}
-    
+
     .kpi-sub {{
         font-size: 12px;
         color: {COLORS['gray']};
@@ -187,7 +188,7 @@ st.markdown(
         margin: 0;
         line-height: 1.4;
     }}
-    
+
     .kpi-icon {{
         font-size: 56px;
         color: var(--accent-color);
@@ -199,11 +200,11 @@ st.markdown(
         opacity: 0.12;
         margin-top: -8px;
     }}
-    
+
     .accent-maroon {{ --accent-color: {COLORS['maroon']}; }}
     .accent-gray {{ --accent-color: {COLORS['gray']}; }}
     .accent-dark {{ --accent-color: {COLORS['maroon_dark']}; }}
-    
+
     .card {{
         background: {COLORS['white']};
         border-radius: 10px;
@@ -211,7 +212,7 @@ st.markdown(
         border: 1px solid {COLORS['border']};
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }}
-    
+
     .insight-box {{
         background: linear-gradient(135deg, rgba(107, 15, 26, 0.08) 0%, rgba(107, 15, 26, 0.04) 100%);
         border-left: 4px solid {COLORS['maroon']};
@@ -219,7 +220,7 @@ st.markdown(
         padding: 20px;
         margin: 16px 0;
     }}
-    
+
     .insight-title {{
         font-weight: 700;
         font-size: 14px;
@@ -229,13 +230,13 @@ st.markdown(
         align-items: center;
         gap: 8px;
     }}
-    
+
     .insight-text {{
         font-size: 13px;
         line-height: 1.7;
         color: {COLORS['text_muted']};
     }}
-    
+
     .narasi-box {{
         background: {COLORS['white']};
         border-left: 4px solid {COLORS['gray']};
@@ -247,13 +248,13 @@ st.markdown(
         color: {COLORS['text_muted']};
         border: 1px solid {COLORS['border']};
     }}
-    
+
     .stat-table {{
         width: 100%;
         border-collapse: collapse;
         font-size: 13px;
     }}
-    
+
     .stat-table th {{
         background-color: {COLORS['maroon']};
         color: {COLORS['white']};
@@ -261,24 +262,24 @@ st.markdown(
         text-align: left;
         font-weight: 600;
     }}
-    
+
     .stat-table td {{
         padding: 12px;
         border-bottom: 1px solid {COLORS['border']};
         color: {COLORS['text_primary']};
     }}
-    
+
     .stat-table tr:hover {{
         background-color: {COLORS['neutral']};
     }}
-    
+
     .divider {{
         height: 2px;
         background: linear-gradient(90deg, {COLORS['maroon']} 0%, transparent 100%);
         margin: 28px 0;
         border: none;
     }}
-    
+
     .stButton > button {{
         border-radius: 8px;
         background-color: {COLORS['maroon']};
@@ -288,34 +289,34 @@ st.markdown(
         padding: 10px 20px;
         transition: all 0.2s ease;
     }}
-    
+
     .stButton > button:hover {{
         background-color: {COLORS['maroon_dark']};
         box-shadow: 0 6px 16px rgba(107, 15, 26, 0.3);
     }}
-    
+
     [data-testid="metric-container"] {{
         display: flex;
         flex-direction: column;
     }}
-    
+
     [data-testid="metric-container"] > div:first-child {{
         font-size: 14px !important;
         font-weight: 600 !important;
         color: {COLORS['text_primary']} !important;
     }}
-    
+
     [data-testid="metric-container"] > div:last-child {{
         font-size: 10px !important;
         font-weight: 500 !important;
         color: {COLORS['text_muted']} !important;
     }}
-    
+
     .text-maroon {{ color: {COLORS['maroon']}; }}
     .text-gray {{ color: {COLORS['gray']}; }}
     .text-sm {{ font-size: 12px; }}
     .text-lg {{ font-size: 16px; font-weight: 700; }}
-    
+
     </style>
     """,
     unsafe_allow_html=True,
@@ -550,7 +551,7 @@ if model is None:
     st.stop()
 
 # =========================
-# PREDIKSI - FIXED
+# PREDIKSI - PERBAIKAN CONFIDENCE
 # =========================
 try:
     # Prepare features
@@ -571,17 +572,29 @@ try:
     pred = model.predict(X_scaled)
     pred_labels = pd.Series(pred).map({0: "SAGE", 1: "DELTA"}).astype(str)
 
-    # PENTING: Get probabilities untuk confidence score
+    # ✅ PENTING: Get probabilities untuk confidence score
     if hasattr(model, "predict_proba"):
-        probs = model.predict_proba(X_scaled)
-        prob_sage = probs[:, 0] * 100
-        prob_delta = probs[:, 1] * 100
-        confidence = np.max(probs, axis=1) * 100
+        try:
+            probs = model.predict_proba(X_scaled)
+            prob_sage = probs[:, 0] * 100
+            prob_delta = probs[:, 1] * 100
+            confidence = np.max(probs, axis=1) * 100
+
+            # Validasi confidence terisi
+            if np.isnan(confidence).all():
+                st.warning("⚠️ Semua confidence NaN! Menggunakan default 80%")
+                confidence = np.full(len(X), 80.0)
+
+        except Exception as e:
+            st.error(f"⚠️ Error predict_proba: {e}")
+            confidence = np.full(len(X), 50.0)
+            prob_sage = np.full(len(X), 50.0)
+            prob_delta = np.full(len(X), 50.0)
     else:
-        prob_sage = np.full(len(X), np.nan)
-        prob_delta = np.full(len(X), np.nan)
-        confidence = np.full(len(X), np.nan)
         st.warning("⚠️ Model tidak mendukung predict_proba()")
+        confidence = np.full(len(X), 50.0)
+        prob_sage = np.full(len(X), 50.0)
+        prob_delta = np.full(len(X), 50.0)
 
 except Exception as e:
     st.error(f"❌ Error saat prediksi: {e}")
@@ -832,13 +845,10 @@ with tab_table:
     fig_radar.update_layout(
         height=400,
         margin=dict(l=50, r=50, t=50, b=50),
-
-        # 🔥 ini kunci transparan
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
     )
 
-    # optional: bikin grid juga lebih clean (opsional tapi bagus)
     fig_radar.update_polars(
         bgcolor='rgba(0,0,0,0)',
         radialaxis=dict(
@@ -868,7 +878,7 @@ with tab_table:
     )
 
 # =========================
-# TAB 3: VISUALISASI
+# TAB 3: VISUALISASI - FIXED CONFIDENCE CHART
 # =========================
 with tab_vis:
     st.markdown(
@@ -964,9 +974,8 @@ with tab_vis:
         except Exception as e:
             st.error(f"❌ Error rendering donut chart: {str(e)}")
 
-    # ========== KOLOM KANAN: PENJELASAN DONUT CHART (MIDDLE RIGHT) ==========
+    # ========== KOLOM KANAN: PENJELASAN DONUT CHART ==========
     with col_explanation:
-        # Vertical spacer untuk menempatkan box di tengah
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
 
         st.markdown(
@@ -1000,8 +1009,7 @@ with tab_vis:
                 "Feature": FEATURE_COLS,
                 "Importance": model.feature_importances_
             })
-            # Urutkan dari yang terbesar ke terkecil agar yang terbesar muncul di atas grafik
-            fi_df = fi_df.sort_values("Importance", ascending=True).tail()
+            fi_df = fi_df.sort_values("Importance", ascending=True).tail(10)
 
             fig_fi = go.Figure(
                 data=[go.Bar(
@@ -1009,7 +1017,7 @@ with tab_vis:
                     y=fi_df["Feature"].values,
                     orientation="h",
                     marker=dict(
-                        color="#6B0F1A",  # Warna maroon
+                        color="#6B0F1A",
                         line=dict(color="#4A0A13", width=1),
                         opacity=0.85
                     ),
@@ -1025,8 +1033,8 @@ with tab_vis:
                 xaxis_title="Importance Score",
                 showlegend=False,
                 font=dict(size=11),
-                plot_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang plot transparan
-                paper_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang kertas transparan
+                plot_bgcolor="rgba(0, 0, 0, 0)",
+                paper_bgcolor="rgba(0, 0, 0, 0)",
                 xaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", zeroline=False),
                 yaxis=dict(showgrid=False, zeroline=False)
             )
@@ -1040,7 +1048,7 @@ with tab_vis:
                     <i class='fas fa-info-circle'></i> Penjelasan 
                 </div>  
                 <div class='insight-text'>  
-                    Grafik di atas menunjukkan 5 faktor (mata kuliah atau aktivitas) yang paling berpengaruh dalam prediksi peminatan laboratorium, diurutkan dari yang paling tidak penting ke paling penting. Nilai importance yang lebih tinggi berarti faktor tersebut memiliki kontribusi lebih besar dalam keputusan model. Semakin panjang bar, semakin penting fitur tersebut.  
+                    Grafik di atas menunjukkan 10 faktor (mata kuliah atau aktivitas) yang paling berpengaruh dalam prediksi peminatan laboratorium. Nilai importance yang lebih tinggi berarti faktor tersebut memiliki kontribusi lebih besar dalam keputusan model. Semakin panjang bar, semakin penting fitur tersebut.  
                 </div>  
             </div>  
                 """,
@@ -1052,7 +1060,7 @@ with tab_vis:
     except Exception as e:
         st.error(f"❌ Error menampilkan feature importance: {str(e)}")
 
-    # ========== BAR CHART: DISTRIBUSI CONFIDENCE LEVEL ==========
+    # ========== BAR CHART: DISTRIBUSI CONFIDENCE LEVEL - FULLY FIXED ==========
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     st.markdown(
         """  
@@ -1065,80 +1073,163 @@ with tab_vis:
 
     col_bar_chart, col_bar_explanation = st.columns([1.3, 1], gap="large")
 
-    # ========== KOLOM KIRI: BAR CHART ==========
+    # ========== KOLOM KIRI: BAR CHART - FULLY FIXED ==========
     with col_bar_chart:
         try:
-            # Membuat kategori confidence dan menghitung frekuensi
-            if "Confidence" in df_out.columns:
-                confidence_data = df_out["Confidence"].dropna()
-
-                # Binning confidence ke dalam kategori
-                bins = [0, 25, 50, 75, 100]
-                labels = ["0-25%", "25-50%", "50-75%", "75-100%"]
-                confidence_binned = pd.cut(confidence_data, bins=bins, labels=labels, right=True)
-                confidence_counts = confidence_binned.value_counts().sort_index()
-
-                fig_bar = go.Figure(
-                    data=[go.Bar(
-                        x=confidence_counts.index.astype(str),
-                        y=confidence_counts.values,
-                        marker=dict(
-                            color="#6B0F1A",
-                            line=dict(color="#4A0A13", width=1),
-                            opacity=0.85
-                        ),
-                        text=confidence_counts.values,
-                        textposition="outside",
-                        hovertemplate="<b>%{x}</b><br>Jumlah Mahasiswa: %{y}<extra></extra>",
-                        name="Mahasiswa"
-                    )]
-                )
-
-                fig_bar.update_layout(
-                    height=400,
-                    margin=dict(l=60, r=20, t=20, b=50),
-                    xaxis_title="Confidence Range (%)",
-                    yaxis_title="Jumlah Mahasiswa",
-                    showlegend=False,
-                    font=dict(size=12),
-                    # --- PERUBAHAN DI SINI ---
-                    plot_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang plot transparan
-                    paper_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang kertas transparan
-                    # --- AKHIR PERUBAHAN ---
-                    xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor="#E5E7EB"),
-                    yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1,
-                               linecolor="#E5E7EB"),
-                    hovermode="x unified"
-                )
-
-                st.plotly_chart(fig_bar, use_container_width=True)
+            # ==================== STEP 1: VALIDASI DATA ====================
+            if "Confidence" not in df_out.columns:
+                st.error("❌ Kolom Confidence tidak ada!")
+                st.write(f"Kolom tersedia: {df_out.columns.tolist()}")
             else:
-                st.warning("⚠️ Kolom Confidence tidak ditemukan")
+                confidence_series = df_out["Confidence"].copy()
+
+                # Cek apakah semua NaN
+                if confidence_series.isna().all():
+                    st.error("❌ SEMUA nilai Confidence adalah NaN!")
+                    st.write("Penyebab: Model tidak menghasilkan probabilitas")
+
+                # Cek nilai valid
+                valid_confidence = confidence_series.dropna()
+
+                if len(valid_confidence) == 0:
+                    st.warning("⚠️ Tidak ada nilai Confidence yang valid!")
+
+                else:
+                    # ==================== STEP 2: ANALISIS RANGE ====================
+                    min_conf_val = valid_confidence.min()
+                    max_conf_val = valid_confidence.max()
+                    mean_conf = valid_confidence.mean()
+
+                    st.info(
+                        f"✓ Data valid: {len(valid_confidence)} mahasiswa | Min: {min_conf_val:.1f}% | Max: {max_conf_val:.1f}% | Avg: {mean_conf:.1f}%")
+
+                    # ==================== STEP 3: BINNING DENGAN NUMPY ====================
+                    bin_edges = [0, 25, 50, 75, 100.1]
+                    bin_labels = ["0-25%", "25-50%", "50-75%", "75-100%"]
+
+                    # Gunakan numpy.digitize untuk binning yang akurat
+                    bin_indices = np.digitize(valid_confidence.values, bin_edges)
+                    bin_indices = np.clip(bin_indices - 1, 0, 3)
+
+                    # Hitung frekuensi setiap bin
+                    bin_counts = np.bincount(bin_indices, minlength=4)
+
+                    # ==================== STEP 4: BUAT BAR CHART ====================
+                    fig_bar = go.Figure(
+                        data=[go.Bar(
+                            x=bin_labels,
+                            y=bin_counts,
+                            marker=dict(
+                                color="#6B0F1A",
+                                line=dict(color="#4A0A13", width=2),
+                                opacity=0.85
+                            ),
+                            text=bin_counts,
+                            textposition="outside",
+                            textfont=dict(size=12, color="#6B0F1A"),
+                            hovertemplate="<b>%{x}</b><br>Jumlah Mahasiswa: %{y}<extra></extra>",
+                            name="Mahasiswa"
+                        )]
+                    )
+
+                    # ==================== STEP 5: STYLING ====================
+                    fig_bar.update_layout(
+                        title=None,
+                        height=400,
+                        margin=dict(l=60, r=20, t=40, b=50),
+                        xaxis=dict(
+                            title="<b>Confidence Range (%)</b>",
+                            titlefont=dict(size=12, color="#111827"),
+                            tickfont=dict(size=11, color="#6B7280"),
+                            showgrid=False,
+                            zeroline=False,
+                            showline=True,
+                            linewidth=2,
+                            linecolor="#E5E7EB"
+                        ),
+                        yaxis=dict(
+                            title="<b>Jumlah Mahasiswa</b>",
+                            titlefont=dict(size=12, color="#111827"),
+                            tickfont=dict(size=11, color="#6B7280"),
+                            showgrid=True,
+                            gridwidth=1,
+                            gridcolor="#E5E7EB",
+                            showline=True,
+                            linewidth=2,
+                            linecolor="#E5E7EB",
+                            zeroline=True,
+                            zerolinewidth=2,
+                            zerolinecolor="#E5E7EB"
+                        ),
+                        showlegend=False,
+                        font=dict(family="Segoe UI, sans-serif", size=11, color="#111827"),
+                        plot_bgcolor="rgba(255, 255, 255, 0.5)",
+                        paper_bgcolor="rgba(0, 0, 0, 0)",
+                        hovermode="x unified",
+                        bargap=0.3
+                    )
+
+                    st.plotly_chart(fig_bar, use_container_width=True, key="conf_distribution_chart")
+
+                    # ==================== STEP 6: SUMMARY STATS ====================
+                    st.markdown("---")
+                    col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
+
+                    with col_stat1:
+                        count_0_25 = (valid_confidence < 25).sum()
+                        pct = count_0_25 / len(valid_confidence) * 100 if len(valid_confidence) > 0 else 0
+                        st.metric("0-25%", int(count_0_25), f"{pct:.1f}%")
+
+                    with col_stat2:
+                        count_25_50 = ((valid_confidence >= 25) & (valid_confidence < 50)).sum()
+                        pct = count_25_50 / len(valid_confidence) * 100 if len(valid_confidence) > 0 else 0
+                        st.metric("25-50%", int(count_25_50), f"{pct:.1f}%")
+
+                    with col_stat3:
+                        count_50_75 = ((valid_confidence >= 50) & (valid_confidence < 75)).sum()
+                        pct = count_50_75 / len(valid_confidence) * 100 if len(valid_confidence) > 0 else 0
+                        st.metric("50-75%", int(count_50_75), f"{pct:.1f}%")
+
+                    with col_stat4:
+                        count_75_100 = (valid_confidence >= 75).sum()
+                        pct = count_75_100 / len(valid_confidence) * 100 if len(valid_confidence) > 0 else 0
+                        st.metric("75-100%", int(count_75_100), f"{pct:.1f}%")
 
         except Exception as e:
-            st.error(f"❌ Error rendering bar chart: {str(e)}")
+            st.error(f"❌ Error saat membuat chart: {str(e)}")
+            import traceback
 
-            # ========== KOLOM KANAN: PENJELASAN BAR CHART (MIDDLE RIGHT) ==========
+            st.write("**Traceback:**")
+            st.write(traceback.format_exc())
+
+    # ========== KOLOM KANAN: PENJELASAN ===========
     with col_bar_explanation:
-        # Vertical spacer untuk menempatkan box di tengah
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
 
         st.markdown(
-            """  
-        <div class='insight-box'>  
-            <div class='insight-title'>  
-                <i class='fas fa-info-circle'></i> Penjelasan 
-            </div>  
-            <div class='insight-text'>Grafik ini menunjukkan sebaran tingkat confidence (keyakinan) model dalam melakukan prediksi. Semakin tinggi confidence, semakin yakin model dengan keputusannya. Mayoritas mahasiswa seharusnya berada di range 75-100% untuk prediksi yang berkualitas tinggi. Nilai confidence yang tinggi mengindikasikan bahwa model memiliki tingkat akurasi dan reliabilitas yang baik dalam memprediksi peminatan laboratorium mahasiswa.
-            </div>  
-        </div>  
+            """
+            <div class='insight-box'>
+                <div class='insight-title'>
+                    <i class='fas fa-lightbulb'></i> Penjelasan Confidence Level
+                </div>
+                <div class='insight-text'>
+                    <strong>Confidence Level</strong> menunjukkan seberapa yakin model dalam memprediksi peminatan laboratorium setiap mahasiswa.
+                    <br><br>
+                    📊 <strong>Interpretasi Range:</strong><br>
+                    • <strong>75-100%:</strong> Prediksi sangat akurat & reliabel ✅<br>
+                    • <strong>50-75%:</strong> Prediksi cukup baik ⚠️<br>
+                    • <strong>25-50%:</strong> Prediksi kurang yakin ⚠️⚠️<br>
+                    • <strong>0-25%:</strong> Model tidak yakin ❌<br><br>
+                    Mayoritas mahasiswa seharusnya berada di range <strong>75-100%</strong> untuk hasil prediksi yang berkualitas tinggi.
+                </div>
+            </div>
             """,
             unsafe_allow_html=True
         )
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
-    # ========== ADDITIONAL VISUALIZATIONS ==========
+    # ========== HISTOGRAM PROBABILITAS SAGE ==========
     st.markdown(
         """  
         <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>  
@@ -1150,7 +1241,6 @@ with tab_vis:
 
     col_analysis1, col_analysis2 = st.columns(2, gap="large")
 
-    # ========== HISTOGRAM PROBABILITAS SAGE ==========
     with col_analysis1:
         st.markdown(
             """  
@@ -1186,10 +1276,8 @@ with tab_vis:
                         yaxis_title="Frekuensi",
                         showlegend=False,
                         font=dict(size=11),
-                        # --- PERUBAHAN DI SINI ---
-                        plot_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang plot transparan
-                        paper_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang kertas transparan
-                        # --- AKHIR PERUBAHAN ---
+                        plot_bgcolor="rgba(0, 0, 0, 0)",
+                        paper_bgcolor="rgba(0, 0, 0, 0)",
                         xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor="#E5E7EB"),
                         yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1,
                                    linecolor="#E5E7EB"),
@@ -1204,7 +1292,6 @@ with tab_vis:
         except Exception as e:
             st.error(f"❌ Gagal menampilkan histogram SAGE: {str(e)}")
 
-    # ========== HISTOGRAM PROBABILITAS DELTA ==========
     with col_analysis2:
         st.markdown(
             """  
@@ -1240,10 +1327,8 @@ with tab_vis:
                         yaxis_title="Frekuensi",
                         showlegend=False,
                         font=dict(size=11),
-                        # --- PERUBAHAN DI SINI ---
-                        plot_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang plot transparan
-                        paper_bgcolor="rgba(0, 0, 0, 0)",  # Latar belakang kertas transparan
-                        # --- AKHIR PERUBAHAN ---
+                        plot_bgcolor="rgba(0, 0, 0, 0)",
+                        paper_bgcolor="rgba(0, 0, 0, 0)",
                         xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor="#E5E7EB"),
                         yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", showline=True, linewidth=1,
                                    linecolor="#E5E7EB"),
