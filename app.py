@@ -1060,7 +1060,7 @@ with tab_vis:
     except Exception as e:
         st.error(f"❌ Error menampilkan feature importance: {str(e)}")
 
-    # ========== BAR CHART: DISTRIBUSI CONFIDENCE LEVEL - FULLY FIXED ==========
+    # ========== BAR CHART: DISTRIBUSI CONFIDENCE LEVEL - FIXED YAXIS ==========
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     st.markdown(
         """  
@@ -1073,7 +1073,7 @@ with tab_vis:
 
     col_bar_chart, col_bar_explanation = st.columns([1.3, 1], gap="large")
 
-    # ========== KOLOM KIRI: BAR CHART - FULLY FIXED ==========
+    # ========== KOLOM KIRI: BAR CHART - FIXED ==========
     with col_bar_chart:
         try:
             # ==================== STEP 1: VALIDASI DATA ====================
@@ -1114,17 +1114,19 @@ with tab_vis:
                     # Hitung frekuensi setiap bin
                     bin_counts = np.bincount(bin_indices, minlength=4)
 
-                    # ==================== STEP 4: BUAT BAR CHART ====================
+                    st.write(f"**Debug Binning:** {dict(zip(bin_labels, bin_counts.tolist()))}")
+
+                    # ==================== STEP 4: BUAT BAR CHART - YAXIS FIXED ====================
                     fig_bar = go.Figure(
                         data=[go.Bar(
                             x=bin_labels,
-                            y=bin_counts,
+                            y=bin_counts.astype(int),  # ✅ Convert to int
                             marker=dict(
                                 color="#6B0F1A",
                                 line=dict(color="#4A0A13", width=2),
                                 opacity=0.85
                             ),
-                            text=bin_counts,
+                            text=bin_counts.astype(int),  # ✅ Display as int
                             textposition="outside",
                             textfont=dict(size=12, color="#6B0F1A"),
                             hovertemplate="<b>%{x}</b><br>Jumlah Mahasiswa: %{y}<extra></extra>",
@@ -1132,11 +1134,13 @@ with tab_vis:
                         )]
                     )
 
-                    # ==================== STEP 5: STYLING ====================
+                    # ==================== STEP 5: STYLING - YAXIS FIXED ====================
                     fig_bar.update_layout(
                         title=None,
                         height=400,
                         margin=dict(l=60, r=20, t=40, b=50),
+
+                        # ✅ PERBAIKAN UTAMA: XAXIS
                         xaxis=dict(
                             title="<b>Confidence Range (%)</b>",
                             titlefont=dict(size=12, color="#111827"),
@@ -1145,22 +1149,36 @@ with tab_vis:
                             zeroline=False,
                             showline=True,
                             linewidth=2,
-                            linecolor="#E5E7EB"
+                            linecolor="#E5E7EB",
+                            type="category"  # ✅ Set as category type
                         ),
+
+                        # ✅ PERBAIKAN UTAMA: YAXIS
                         yaxis=dict(
                             title="<b>Jumlah Mahasiswa</b>",
                             titlefont=dict(size=12, color="#111827"),
                             tickfont=dict(size=11, color="#6B7280"),
+
+                            # ✅ CRITICAL: autorange HARUS "min reversed" atau True
+                            autorange=True,  # ← KUNCI PERBAIKAN
+
+                            # ✅ Range harus positive
+                            rangemode="tozero",  # ← Jangan ke negative
+
                             showgrid=True,
                             gridwidth=1,
                             gridcolor="#E5E7EB",
                             showline=True,
                             linewidth=2,
                             linecolor="#E5E7EB",
-                            zeroline=True,
-                            zerolinewidth=2,
-                            zerolinecolor="#E5E7EB"
+                            zeroline=False,  # ← Jangan tampilkan zero line
+
+                            # ✅ Tick settings
+                            tickmode="linear",
+                            tick0=0,
+                            dtick=1,  # ← Increment by 1 untuk integer count
                         ),
+
                         showlegend=False,
                         font=dict(family="Segoe UI, sans-serif", size=11, color="#111827"),
                         plot_bgcolor="rgba(255, 255, 255, 0.5)",
@@ -1227,9 +1245,8 @@ with tab_vis:
             unsafe_allow_html=True
         )
 
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-
     # ========== HISTOGRAM PROBABILITAS SAGE ==========
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
     st.markdown(
         """  
         <div style='font-size: 18px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>  
