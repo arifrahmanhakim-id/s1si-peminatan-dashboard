@@ -1019,25 +1019,74 @@ with tab_vis:
 
         col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4, gap="large")
 
+        # Calculate all values first
+        count_0_25 = (confidence_data < 25).sum()
+        pct_0_25 = count_0_25 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+
+        count_25_50 = ((confidence_data >= 25) & (confidence_data < 50)).sum()
+        pct_25_50 = count_25_50 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+
+        count_50_75 = ((confidence_data >= 50) & (confidence_data < 75)).sum()
+        pct_50_75 = count_50_75 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+
+        count_75_100 = (confidence_data >= 75).sum()
+        pct_75_100 = count_75_100 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
+
+        # Metric 1: 0-25% (Merah)
         with col_stat1:
-            count_0_25 = (confidence_data < 25).sum()
-            pct = count_0_25 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
-            st.metric("0-25%", int(count_0_25), f"{pct:.1f}%")
+            st.markdown(
+                f"""
+                <div style='border-radius: 8px; padding: 16px; text-align: center; background: white; 
+                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border-left: 4px solid #EF4444;'>
+                    <div style='font-size: 12px; color: #6B7280; font-weight: 600; margin-bottom: 8px;'>0-25%</div>
+                    <div style='font-size: 28px; color: #6B0F1A; font-weight: 700;'>{int(count_0_25)}</div>
+                    <div style='font-size: 11px; color: #9CA3AF;'>{pct_0_25:.1f}%</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
+        # Metric 2: 25-50% (Oranye)
         with col_stat2:
-            count_25_50 = ((confidence_data >= 25) & (confidence_data < 50)).sum()
-            pct = count_25_50 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
-            st.metric("25-50%", int(count_25_50), f"{pct:.1f}%")
+            st.markdown(
+                f"""
+                <div style='border-radius: 8px; padding: 16px; text-align: center; background: white; 
+                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border-left: 4px solid #F59E0B;'>
+                    <div style='font-size: 12px; color: #6B7280; font-weight: 600; margin-bottom: 8px;'>25-50%</div>
+                    <div style='font-size: 28px; color: #6B0F1A; font-weight: 700;'>{int(count_25_50)}</div>
+                    <div style='font-size: 11px; color: #9CA3AF;'>{pct_25_50:.1f}%</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
+        # Metric 3: 50-75% (Oranye)
         with col_stat3:
-            count_50_75 = ((confidence_data >= 50) & (confidence_data < 75)).sum()
-            pct = count_50_75 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
-            st.metric("50-75%", int(count_50_75), f"{pct:.1f}%")
+            st.markdown(
+                f"""
+                <div style='border-radius: 8px; padding: 16px; text-align: center; background: white; 
+                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border-left: 4px solid #F59E0B;'>
+                    <div style='font-size: 12px; color: #6B7280; font-weight: 600; margin-bottom: 8px;'>50-75%</div>
+                    <div style='font-size: 28px; color: #6B0F1A; font-weight: 700;'>{int(count_50_75)}</div>
+                    <div style='font-size: 11px; color: #9CA3AF;'>{pct_50_75:.1f}%</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
+        # Metric 4: 75-100% (Hijau)
         with col_stat4:
-            count_75_100 = (confidence_data >= 75).sum()
-            pct = count_75_100 / len(confidence_data) * 100 if len(confidence_data) > 0 else 0
-            st.metric("75-100%", int(count_75_100), f"{pct:.1f}%")
+            st.markdown(
+                f"""
+                <div style='border-radius: 8px; padding: 16px; text-align: center; background: white; 
+                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border-left: 4px solid #16A34A;'>
+                    <div style='font-size: 12px; color: #6B7280; font-weight: 600; margin-bottom: 8px;'>75-100%</div>
+                    <div style='font-size: 28px; color: #6B0F1A; font-weight: 700;'>{int(count_75_100)}</div>
+                    <div style='font-size: 11px; color: #9CA3AF;'>{pct_75_100:.1f}%</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
