@@ -14,6 +14,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import warnings
+import plotly.graph_objects as go
 
 warnings.filterwarnings('ignore')
 
@@ -839,9 +840,15 @@ count_delta = int((df_out["Prediksi Lab"] == "DELTA").sum())
 # =========================
 # 17. CREATE TABS
 # =========================
-tab_summary, tab_table, tab_vis, tab_export = st.tabs(
-    ["⊞ Ringkasan", "⊟ Data", "◈ Visualisasi", "↓ Export"]
-)
+tab_summary, tab_table, tab_vis, tab_comparative, tab_export = st.tabs(  
+    [  
+        "⊞ Ringkasan",      # Tab 1  
+        "⊟ Data",           # Tab 2  
+        "◈ Visualisasi",    # Tab 3  
+        "⇄ Perbandingan",   # Tab 4  
+        "↓ Export"          # Tab 5  
+    ]  
+) 
 
 # =========================
 # 18. TAB 1: RINGKASAN (SUMMARY)
@@ -1709,8 +1716,346 @@ with tab_vis:
         unsafe_allow_html=True
     )
 
+
 # =========================
-# 21. TAB 4: EXPORT
+# 21. TAB 4: ANALISIS KOMPARASI (PERBANDINGAN)
+# =========================
+with tab_comparative:
+    st.markdown(
+        """
+        <div style='font-size: 20px; font-weight: 700; color: #6B0F1A; margin-bottom: 20px;'>
+            <i class='fas fa-exchange-alt' style='margin-right: 10px;'></i>Analisis Komparasi SAGE vs DELTA
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ===== PERBANDINGAN PROFIL =====
+    st.markdown(
+        """
+        <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px;'>
+            <i class='fas fa-chart-bar'></i> Perbandingan Karakteristik Lab
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    sage_students = df_out[df_out["Prediksi Lab"] == "SAGE"]
+    delta_students = df_out[df_out["Prediksi Lab"] == "DELTA"]
+    total = len(df_out)
+    
+    comparison_data = pd.DataFrame({
+        "Metrik": [
+            "Jumlah Mahasiswa",
+            "Confidence Rata-rata",
+            "Probabilitas Rata-rata",
+            "Rata-rata Nilai Akademik"
+        ],
+        "SAGE": [
+            len(sage_students),
+            f"{sage_students['Confidence'].mean():.2f}%",
+            f"{sage_students['Probabilitas SAGE'].mean():.2f}%",
+            f"{sage_students[SUBJECT_COLS].mean().mean():.2f}"
+        ],
+        "DELTA": [
+            len(delta_students),
+            f"{delta_students['Confidence'].mean():.2f}%",
+            f"{delta_students['Probabilitas DELTA'].mean():.2f}%",
+            f"{delta_students[SUBJECT_COLS].mean().mean():.2f}"
+        ]
+    })
+    
+    st.dataframe(comparison_data, use_container_width=True, hide_index=True)
+
+    sage_pct = len(sage_students) / total * 100
+    delta_pct = len(delta_students) / total * 100
+
+    st.markdown(
+        f"""
+        <div class='insight-box'>
+            <div class='insight-title'>
+                <i class='fas fa-info-circle'></i> Penjelasan Tabel Perbandingan
+            </div>
+            <div class='insight-text'>
+                Tabel di atas menampilkan perbandingan <strong>4 metrik utama</strong> antara Lab SAGE dan DELTA untuk memahami karakteristik unik setiap laboratorium.
+                <br><br>
+                <strong>1. Jumlah Mahasiswa:</strong><br>
+                Total mahasiswa yang diprediksi masuk ke masing-masing laboratorium. Lab SAGE memiliki {len(sage_students)} mahasiswa ({sage_pct:.1f}%), sementara Lab DELTA memiliki {len(delta_students)} mahasiswa ({delta_pct:.1f}%). Jumlah yang seimbang menunjukkan keberagaman profil mahasiswa di kampus.
+                <br><br>
+                <strong>2. Confidence Rata-rata:</strong><br>
+                Rata-rata tingkat kepercayaan model terhadap prediksi di setiap lab. Lab SAGE: {sage_students['Confidence'].mean():.2f}%, Lab DELTA: {delta_students['Confidence'].mean():.2f}%. Nilai tinggi (>75%) menunjukkan prediksi yang lebih akurat dan reliabel untuk mahasiswa di laboratorium tersebut.
+                <br><br>
+                <strong>3. Probabilitas Rata-rata:</strong><br>
+                Rata-rata probabilitas prediksi untuk masing-masing lab. Lab SAGE: {sage_students['Probabilitas SAGE'].mean():.2f}%, Lab DELTA: {delta_students['Probabilitas DELTA'].mean():.2f}%. Menunjukkan seberapa kuat profil mahasiswa rata-rata cocok dengan lab tersebut.
+                <br><br>
+                <strong>4. Rata-rata Nilai Akademik:</strong><br>
+                Rata-rata nilai semua mata kuliah per lab. Lab SAGE: {sage_students[SUBJECT_COLS].mean().mean():.2f}, Lab DELTA: {delta_students[SUBJECT_COLS].mean().mean():.2f}. Memberi indikasi level akademik keseluruhan mahasiswa di setiap laboratorium untuk perbandingan standar akademik.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+    
+    # ===== SCATTER PLOT =====
+    st.markdown(
+        """
+        <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px;'>
+            <i class='fas fa-scatter'></i> Scatter Plot: Confidence vs Probabilitas
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    fig_scatter = go.Figure()
+    
+    fig_scatter.add_trace(go.Scatter(
+        x=sage_students["Confidence"],
+        y=sage_students["Probabilitas SAGE"],
+        mode="markers",
+        name="SAGE",
+        marker=dict(size=8, color="#6B0F1A", opacity=0.6),
+        text=sage_students["Nama Lengkap"],
+        hovertemplate="<b>%{text}</b><br>Confidence: %{x:.1f}%<br>Prob SAGE: %{y:.1f}%<extra></extra>"
+    ))
+    
+    fig_scatter.add_trace(go.Scatter(
+        x=delta_students["Confidence"],
+        y=delta_students["Probabilitas DELTA"],
+        mode="markers",
+        name="DELTA",
+        marker=dict(size=8, color="#6B7280", opacity=0.6),
+        text=delta_students["Nama Lengkap"],
+        hovertemplate="<b>%{text}</b><br>Confidence: %{x:.1f}%<br>Prob DELTA: %{y:.1f}%<extra></extra>"
+    ))
+    
+    fig_scatter.update_layout(
+        title="Scatter Plot: Confidence Level vs Probabilitas Per Lab",
+        xaxis_title="Confidence Level (%)",
+        yaxis_title="Probabilitas Lab (%)",
+        height=450,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        hovermode="closest",
+        transition=dict(duration=800, easing="cubic-out"),
+        font=dict(size=11),
+        xaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB"),
+        yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB")
+    )
+    
+    st.plotly_chart(fig_scatter, use_container_width=True)
+
+    st.markdown(
+        f"""
+        <div class='insight-box'>
+            <div class='insight-title'>
+                <i class='fas fa-lightbulb'></i> Penjelasan Scatter Plot
+            </div>
+            <div class='insight-text'>
+                Scatter plot ini memvisualisasikan hubungan antara dua dimensi penting untuk analisis perbandingan lab secara mendalam.
+                <br><br>
+                <strong>Sumbu X (Horizontal) - Confidence Level (%):</strong><br>
+                Menunjukkan tingkat kepercayaan model terhadap setiap prediksi. Semakin ke kanan, semakin tinggi confidence-nya, artinya model sangat yakin dengan prediksinya.
+                <br><br>
+                <strong>Sumbu Y (Vertikal) - Probabilitas Lab (%):</strong><br>
+                Menunjukkan probabilitas prediksi ke laboratorium masing-masing. Semakin ke atas, semakin cocok profil mahasiswa dengan lab tersebut.
+                <br><br>
+                <strong>Interpretasi Pola Cluster:</strong><br>
+                • <strong>Cluster Atas-Kanan:</strong> Mahasiswa dengan prediksi sangat akurat dan profil cocok dengan lab (IDEAL)<br>
+                • <strong>Cluster Atas-Kiri:</strong> Prediksi kurang yakin meski cocok dengan lab (PERLU REVIEW)<br>
+                • <strong>Cluster Bawah-Kanan:</strong> Prediksi akurat tapi profil kurang cocok (BORDERLINE CASE)<br>
+                • <strong>Cluster Bawah-Kiri:</strong> Prediksi lemah dan profil tidak cocok (PERLU KONSULTASI KHUSUS)<br>
+                <br>
+                <strong>Warna Indikator:</strong><br>
+                • <strong>Maroon (SAGE):</strong> Lab Software Development & Architecture<br>
+                • <strong>Abu-abu (DELTA):</strong> Lab Data Analytics & Business Intelligence
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+
+    # ===== SUBJECT COMPARISON =====
+    st.markdown(
+        """
+        <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px;'>
+            <i class='fas fa-books'></i> Perbandingan Nilai Mata Kuliah
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    col_subject1, col_subject2 = st.columns(2, gap="large")
+
+    with col_subject1:
+        sage_subjects = sage_students[SUBJECT_COLS].mean().sort_values(ascending=False).head(8)
+        
+        fig_sage = px.bar(
+            x=sage_subjects.values,
+            y=sage_subjects.index,
+            orientation="h",
+            title="Top 8 Mata Kuliah - Lab SAGE",
+            labels={"x": "Nilai Rata-rata", "y": "Mata Kuliah"},
+            color_discrete_sequence=["#6B0F1A"]
+        )
+        
+        fig_sage.update_layout(
+            height=400,
+            showlegend=False,
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=200, r=20, t=40, b=20),
+            transition=dict(duration=1000, easing="cubic-in-out")
+        )
+        
+        st.plotly_chart(fig_sage, use_container_width=True)
+
+    with col_subject2:
+        delta_subjects = delta_students[SUBJECT_COLS].mean().sort_values(ascending=False).head(8)
+        
+        fig_delta = px.bar(
+            x=delta_subjects.values,
+            y=delta_subjects.index,
+            orientation="h",
+            title="Top 8 Mata Kuliah - Lab DELTA",
+            labels={"x": "Nilai Rata-rata", "y": "Mata Kuliah"},
+            color_discrete_sequence=["#6B7280"]
+        )
+        
+        fig_delta.update_layout(
+            height=400,
+            showlegend=False,
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=200, r=20, t=40, b=20),
+            transition=dict(duration=1000, easing="cubic-in-out")
+        )
+        
+        st.plotly_chart(fig_delta, use_container_width=True)
+
+    st.markdown(
+        f"""
+        <div class='insight-box'>
+            <div class='insight-title'>
+                <i class='fas fa-info-circle'></i> Penjelasan Perbandingan Mata Kuliah
+            </div>
+            <div class='insight-text'>
+                Kedua grafik bar di atas menampilkan <strong>8 mata kuliah dengan nilai tertinggi</strong> di masing-masing laboratorium, memberikan gambaran keunggulan akademik setiap lab.
+                <br><br>
+                <strong>Lab SAGE (Kiri - Warna Maroon):</strong><br>
+                Menunjukkan mata kuliah yang menjadi kekuatan mahasiswa di Lab SAGE. Biasanya mencakup mata kuliah programming-related seperti Pemrograman Berorientasi Objek, Analisis dan Perancangan Sistem Informasi, Algoritma dan Pemrograman, Pengembangan Aplikasi Website, Arsitektur Enterprise, Tata Kelola dan Manajemen Teknologi Informasi yang merupakan fondasi engineering dan software architecture.
+                <br><br>
+                <strong>Lab DELTA (Kanan - Warna Abu-abu):</strong><br>
+                Menunjukkan mata kuliah yang menjadi kekuatan mahasiswa di Lab DELTA. Biasanya mencakup mata kuliah analytics-related seperti Penambangan Data, Probabilitas dan Statistik, Sistem Basis Data, Statistika Industri, Data Warehouse dan Business Intelligence serta Matematika Diskrit yang merupakan fondasi data science.
+                <br><br>
+                <strong>Insight Penting untuk Pengambilan Keputusan:</strong><br>
+                • Perbedaan urutan mata kuliah menunjukkan karakteristik akademik unik setiap lab<br>
+                • Nilai rata-rata lebih tinggi di Lab SAGE pada programming-related courses menunjukkan keunggulan teknis di development<br>
+                • Nilai rata-rata lebih tinggi di Lab DELTA pada analytics-related courses menunjukkan keunggulan kuantitatif di data science<br>
+                • Mahasiswa dengan nilai tinggi di kedua area menunjukkan fleksibilitas untuk memilih lab sesuai minat personal
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+
+    # ===== ACTIVITY COMPARISON =====
+    st.markdown(
+        """
+        <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px;'>
+            <i class='fas fa-tasks'></i> Perbandingan Aktivitas Tambahan
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    sage_activities = sage_students[ACTIVITY_COLS].mean()
+    delta_activities = delta_students[ACTIVITY_COLS].mean()
+
+    activity_comparison = pd.DataFrame({
+        "Aktivitas": ACTIVITY_COLS,
+        "SAGE (Avg)": sage_activities.values,
+        "DELTA (Avg)": delta_activities.values
+    })
+
+    st.dataframe(activity_comparison, use_container_width=True, hide_index=True)
+
+    st.markdown(
+        f"""
+        <div class='insight-box'>
+            <div class='insight-title'>
+                <i class='fas fa-info-circle'></i> Penjelasan Perbandingan Aktivitas
+            </div>
+            <div class='insight-text'>
+                Tabel ini membandingkan tingkat keterlibatan mahasiswa dalam <strong>berbagai aktivitas tambahan</strong> antara Lab SAGE dan DELTA untuk melihat pola engagement yang berbeda.
+                <br><br>
+                <strong>7 Kategori Aktivitas Penting:</strong><br>
+                • <strong>Asisten Praktikum:</strong> Pengalaman mengajar/membimbing di lab, menunjukkan komitmen pada pembelajaran praktis<br>
+                • <strong>MBKM:</strong> Program magang atau kerja sambil kuliah, menunjukkan pengalaman industri<br>
+                • <strong>KP:</strong> Kerja praktik/internship formal, menunjukkan pengalaman profesional terstruktur<br>
+                • <strong>Lomba:</strong> Partisipasi dalam kompetisi akademik/programming, menunjukkan tingkat kompetitif<br>
+                • <strong>Penelitian:</strong> Keterlibatan dalam penelitian/research project, menunjukkan minat pada inovasi<br>
+                • <strong>Abdimas:</strong> Pengabdian masyarakat/community service, menunjukkan tanggung jawab sosial<br>
+                • <strong>Sertifikasi:</strong> Sertifikat profesional yang dimiliki, menunjukkan kredensial tambahan<br>
+                <br>
+                <strong>Interpretasi Nilai:</strong><br>
+                Nilai rata-rata menunjukkan seberapa aktif mahasiswa dalam masing-masing aktivitas. Perbedaan yang signifikan menunjukkan preferensi atau komitmen yang berbeda di setiap lab, memberikan insight tentang kultur dan lingkungan kerja laboratorium.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+
+    # ===== KEY INSIGHTS & SUMMARY =====
+    st.markdown(
+        """
+        <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px;'>
+            <i class='fas fa-star'></i> Key Insights & Rekomendasi Strategis
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    sage_avg_conf = sage_students["Confidence"].mean()
+    delta_avg_conf = delta_students["Confidence"].mean()
+    sage_high_conf_pct = (sage_students["Confidence"] >= 80).sum() / len(sage_students) * 100 if len(sage_students) > 0 else 0
+    delta_high_conf_pct = (delta_students["Confidence"] >= 80).sum() / len(delta_students) * 100 if len(delta_students) > 0 else 0
+    
+    st.markdown(
+        f"""
+        <div class='insight-box'>
+            <div class='insight-title'>
+                <i class='fas fa-check-circle'></i> Ringkasan Temuan & Kesimpulan Utama
+            </div>
+            <div class='insight-text'>
+                <strong>1. Distribusi & Keseimbangan:</strong><br>
+                Lab SAGE memiliki <strong>{len(sage_students)} mahasiswa ({sage_pct:.1f}%)</strong>, sementara Lab DELTA memiliki <strong>{len(delta_students)} mahasiswa ({delta_pct:.1f}%)</strong>. Distribusi ini menunjukkan keberagaman profil mahasiswa yang ada di kampus.
+                <br><br>
+                <strong>2. Akurasi Prediksi per Lab:</strong><br>
+                • <strong>Lab SAGE:</strong> Confidence rata-rata <strong>{sage_avg_conf:.2f}%</strong> dengan <strong>{sage_high_conf_pct:.1f}%</strong> prediksi berkualitas tinggi (≥80%)<br>
+                • <strong>Lab DELTA:</strong> Confidence rata-rata <strong>{delta_avg_conf:.2f}%</strong> dengan <strong>{delta_high_conf_pct:.1f}%</strong> prediksi berkualitas tinggi (≥80%)<br>
+                <br>
+                {'Lab SAGE memiliki prediksi yang lebih akurat' if sage_avg_conf > delta_avg_conf else 'Lab DELTA memiliki prediksi yang lebih akurat'}.
+                <br><br>
+                <strong>3. Karakteristik Unik Setiap Lab:</strong><br>
+                • <strong>SAGE (Software Development):</strong> Fokus engineering, architecture, dan software development dengan penekanan pada technical excellence<br>
+                • <strong>DELTA (Data & Analytics):</strong> Fokus analytics, statistics, dan data science dengan penekanan pada data-driven decision making<br>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# =========================
+# 22. TAB 5: EXPORT
 # =========================
 with tab_export:
     st.markdown(
@@ -1803,7 +2148,7 @@ with tab_export:
     )
 
 # =========================
-# 22. FOOTER
+# 23. FOOTER
 # =========================
 st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
