@@ -3,20 +3,319 @@
 # Dashboard Peminatan Laboratorium S1SI
 # =========================
 
-import streamlit as st
+# ============================================================================
+# APLIKASI PREDIKSI PENEMPATAN LABORATORIUM
+# ============================================================================
+# Deskripsi: Sistem berbasis machine learning untuk memprediksi penempatan
+#            laboratorium mahasiswa berdasarkan profil akademik dan aktivitas
+# ============================================================================
+
+# ============================================================================
+# IMPORT LIBRARIES - MACHINE LEARNING & DATA PROCESSING
+# ============================================================================
 import pandas as pd
 import numpy as np
 import pickle
 import joblib
-from io import BytesIO
-import os
-import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime
 import warnings
-import plotly.graph_objects as go
 
 warnings.filterwarnings('ignore')
+
+# ============================================================================
+# IMPORT LIBRARIES - WEB APPLICATION & UI
+# ============================================================================
+import streamlit as st
+
+# ============================================================================
+# IMPORT LIBRARIES - DATA VISUALIZATION
+# ============================================================================
+import plotly.express as px
+import plotly.graph_objects as go
+
+# ============================================================================
+# IMPORT LIBRARIES - PDF GENERATION & FILE HANDLING
+# ============================================================================
+import io
+from io import BytesIO
+import os
+from datetime import datetime
+
+# ============================================================================
+# IMPORT LIBRARIES - REPORTLAB (PDF REPORT)
+# ============================================================================
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Table,
+    TableStyle,
+    Paragraph,
+    Spacer,
+    PageBreak,
+    Image
+)
+
+# ============================================================================
+# KONFIGURASI STREAMLIT
+# ============================================================================
+st.set_page_config(
+    page_title="Prediksi Penempatan Lab",
+    page_icon="∎",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ============================================================================
+# KODE APLIKASI DIMULAI DI SINI
+# ============================================================================
+
+def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, delta_students, total):
+    """Generate professional PDF report"""
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # ===== CUSTOM STYLES =====
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#6B0F1A'),
+        spaceAfter=12,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#6B0F1A'),
+        spaceAfter=10,
+        spaceBefore=12,
+        fontName='Helvetica-Bold'
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=10,
+        alignment=TA_JUSTIFY,
+        spaceAfter=8
+    )
+    
+    # ===== JUDUL HALAMAN =====
+    story.append(Paragraph("LAPORAN", title_style))
+    story.append(Paragraph("Prediksi Penempatan Laboratorium", title_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # ===== INFORMASI DOKUMEN =====
+    doc_info_data = [
+        ['Tanggal Laporan:', datetime.now().strftime('%d %B %Y')],
+        ['Total Mahasiswa:', str(total)]
+    ]
+    
+    doc_info_table = Table(doc_info_data, colWidths=[2*inch, 3*inch])
+    doc_info_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#6B0F1A')),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    
+    story.append(doc_info_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # ===== RINGKASAN STATISTIK =====
+    story.append(Paragraph("1. RINGKASAN STATISTIK KESELURUHAN", heading_style))
+    
+    sage_pct = len(sage_students) / total * 100
+    delta_pct = len(delta_students) / total * 100
+    sage_avg_conf = sage_students["Confidence"].mean()
+    delta_avg_conf = delta_students["Confidence"].mean()
+    
+    summary_data = [
+        ['Metrik', 'Nilai', 'Persentase'],
+        ['Total Mahasiswa', str(total), '100%'],
+        ['Lab SAGE', str(len(sage_students)), f'{sage_pct:.1f}%'],
+        ['Lab DELTA', str(len(delta_students)), f'{delta_pct:.1f}%'],
+        ['Avg Confidence SAGE', f'{sage_avg_conf:.2f}%', '-'],
+        ['Avg Confidence DELTA', f'{delta_avg_conf:.2f}%', '-'],
+        ['Avg Confidence Overall', f'{overall_avg_conf:.2f}%', '-']
+    ]
+    
+    summary_table = Table(summary_data, colWidths=[2.5*inch, 1.5*inch, 1.5*inch])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#6B0F1A')),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F3F4F6')]),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    
+    story.append(summary_table)
+    story.append(Spacer(1, 0.2*inch))
+    
+    # ===== PENJELASAN RINGKASAN =====
+    explanation_text = f"""
+    <b>Penjelasan:</b><br/>
+    Metrik di atas memberikan gambaran umum tentang distribusi dan akurasi prediksi laboratorium untuk seluruh populasi mahasiswa. 
+    Lab SAGE memiliki <b>{len(sage_students)} mahasiswa ({sage_pct:.1f}%)</b> dengan tingkat kepercayaan rata-rata <b>{sage_avg_conf:.2f}%</b>, 
+    sementara Lab DELTA memiliki <b>{len(delta_students)} mahasiswa ({delta_pct:.1f}%)</b> dengan tingkat kepercayaan rata-rata <b>{delta_avg_conf:.2f}%</b>. 
+    Tingkat kepercayaan model secara keseluruhan adalah <b>{overall_avg_conf:.2f}%</b>, yang menunjukkan akurasi dan reliabilitas prediksi model.
+    """
+    
+    story.append(Paragraph(explanation_text, normal_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # ===== ANALISIS KUALITAS PREDIKSI =====
+    story.append(Paragraph("2. ANALISIS KUALITAS PREDIKSI", heading_style))
+    
+    high_conf_count = len(df_out[df_out["Confidence"] >= 80])
+    medium_conf_count = len(df_out[(df_out["Confidence"] >= 60) & (df_out["Confidence"] < 80)])
+    low_conf_count = len(df_out[df_out["Confidence"] < 60])
+    
+    quality_data = [
+        ['Kategori Kualitas', 'Jumlah Mahasiswa', 'Persentase', 'Deskripsi'],
+        ['Kualitas Tinggi (≥80%)', str(high_conf_count), f'{high_conf_count/total*100:.1f}%', 'Prediksi sangat akurat'],
+        ['Kualitas Sedang (60-80%)', str(medium_conf_count), f'{medium_conf_count/total*100:.1f}%', 'Prediksi baik, perlu pertimbangan'],
+        ['Kualitas Rendah (<60%)', str(low_conf_count), f'{low_conf_count/total*100:.1f}%', 'Perlu konsultasi khusus']
+    ]
+    
+    quality_table = Table(quality_data, colWidths=[1.8*inch, 1.5*inch, 1.2*inch, 1.8*inch])
+    quality_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#6B0F1A')),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F3F4F6')]),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('ALIGN', (3, 0), (3, -1), 'LEFT'),
+    ]))
+    
+    story.append(quality_table)
+    story.append(Spacer(1, 0.2*inch))
+    
+    # ===== PAGE BREAK =====
+    story.append(PageBreak())
+    
+    # ===== TABEL DETAIL PREDIKSI (SAMPEL PERTAMA 20) =====
+    story.append(Paragraph("3. DETAIL PREDIKSI SAMPEL MAHASISWA (20 Pertama)", heading_style))
+    
+    detail_sample = detail_table.head(20).copy()
+    detail_data = [['No', 'Nama Mahasiswa', 'Lab Prediksi', 'Confidence', 'Prob SAGE', 'Prob DELTA']]
+    
+    for idx, row in enumerate(detail_sample.values, 1):
+        detail_data.append([
+            str(idx),
+            row[0][:25],  # Truncate nama
+            row[1],
+            row[2],
+            row[3],
+            row[4]
+        ])
+    
+    detail_pred_table = Table(detail_data, colWidths=[0.4*inch, 1.8*inch, 1*inch, 0.9*inch, 0.9*inch, 0.9*inch])
+    detail_pred_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#D1D5DB')),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F9FAFB')]),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+        ('ALIGN', (1, 1), (1, -1), 'LEFT'),
+    ]))
+    
+    story.append(detail_pred_table)
+    story.append(Spacer(1, 0.2*inch))
+    
+    # ===== REKOMENDASI =====
+    story.append(PageBreak())
+    story.append(Paragraph("4. REKOMENDASI IMPLEMENTASI", heading_style))
+    
+    recommendation_text = f"""
+    <b>A. Immediate Action (Kualitas Tinggi - {high_conf_count} mahasiswa):</b><br/>
+    Mahasiswa dengan confidence ≥80% dapat langsung ditempatkan di laboratorium prediksi tanpa konsultasi lebih lanjut. 
+    Tingkat kepercayaan model terhadap prediksi ini sangat tinggi, sehingga keputusan dapat langsung diimplementasikan.<br/>
+    <br/>
+    <b>B. Consultation Required (Kualitas Sedang - {medium_conf_count} mahasiswa):</b><br/>
+    Mahasiswa dengan confidence 60-80% memiliki prediksi yang baik tetapi memerlukan diskusi dengan academic advisor. 
+    Pertimbangan tambahan seperti minat personal, pengalaman, dan career goals perlu dievaluasi sebelum penempatan final.<br/>
+    <br/>
+    <b>C. Special Review (Kualitas Rendah - {low_conf_count} mahasiswa):</b><br/>
+    Mahasiswa dengan confidence <60% memerlukan assessment mendalam dan konsultasi intensif. 
+    Pertimbangkan untuk melakukan evaluasi lebih lanjut menggunakan instrumen assessment tambahan atau wawancara tatap muka.<br/>
+    <br/>
+    <b>D. Monitoring & Validation:</b><br/>
+    Pantau performa mahasiswa setelah penempatan untuk memvalidasi akurasi model dan mengidentifikasi area perbaikan. 
+    Feedback dari mahasiswa dan dosen penasehat sangat berharga untuk continuous improvement model prediksi.<br/>
+    <br/>
+    <b>E. Program Pengembangan Berkelanjutan:</b><br/>
+    Gunakan insight dari laporan ini untuk merancang program pengembangan yang lebih targeted untuk setiap laboratorium. 
+    Update model prediksi secara berkala berdasarkan data historis dan performa aktual mahasiswa.
+    """
+    
+    story.append(Paragraph(recommendation_text, normal_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # ===== KESIMPULAN =====
+    story.append(Paragraph("5. KESIMPULAN", heading_style))
+    
+    conclusion_text = f"""
+    Analisis prediksi laboratorium untuk {total} mahasiswa menunjukkan bahwa model machine learning memberikan rekomendasi 
+    dengan tingkat kepercayaan rata-rata <b>{overall_avg_conf:.2f}%</b>. Distribusi mahasiswa ke Lab SAGE ({len(sage_students)} / {sage_pct:.1f}%) 
+    dan Lab DELTA ({len(delta_students)} / {delta_pct:.1f}%) mencerminkan keberagaman profil akademik dan minat mahasiswa.<br/>
+    <br/>
+    Dengan <b>{high_conf_count} mahasiswa ({high_conf_count/total*100:.1f}%)</b> memiliki prediksi berkualitas tinggi, 
+    <b>{medium_conf_count} mahasiswa ({medium_conf_count/total*100:.1f}%)</b> berkualitas sedang, dan <b>{low_conf_count} mahasiswa ({low_conf_count/total*100:.1f}%)</b> 
+    berkualitas rendah, laporan ini memberikan dasar yang solid untuk pengambilan keputusan penempatan laboratorium yang data-driven dan adil.
+    """
+    
+    story.append(Paragraph(conclusion_text, normal_style))
+    
+    # ===== FOOTER =====
+    story.append(Spacer(1, 0.4*inch))
+    footer_text = f"Laporan ini dihasilkan secara otomatis pada {datetime.now().strftime('%d %B %Y, %H:%M:%S')}"
+    story.append(Paragraph(footer_text, ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.grey,
+        alignment=TA_CENTER
+    )))
+    
+    # Build PDF
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
 
 # =========================
 # 1. CONSTANTS & COLUMNS
@@ -840,15 +1139,16 @@ count_delta = int((df_out["Prediksi Lab"] == "DELTA").sum())
 # =========================
 # 17. CREATE TABS
 # =========================
-tab_summary, tab_table, tab_vis, tab_comparative, tab_export = st.tabs(  
-    [  
-        "⊞ Ringkasan",      # Tab 1  
-        "⊟ Data",           # Tab 2  
-        "◈ Visualisasi",    # Tab 3  
-        "⇄ Perbandingan",   # Tab 4  
-        "↓ Export"          # Tab 5  
-    ]  
-) 
+# ===== DEFINISI SEMUA TABS =====
+tab_summary, tab_table, tab_vis, tab_comparative, tab_report, tab_export = st.tabs([
+    "Ringkasan",
+    "Data Tabel",
+    "Visualisasi",
+    "Perbandingan",
+    "Laporan",
+    "Export"
+])
+
 
 # =========================
 # 18. TAB 1: RINGKASAN (SUMMARY)
@@ -2053,9 +2353,350 @@ with tab_comparative:
         unsafe_allow_html=True
     )
 
+# =========================
+# 22. TAB 5: LAPORAN (REPORT)
+# =========================
+with tab_report:
+    st.markdown(
+        """
+        <div style='font-size: 20px; font-weight: 700; color: #6B0F1A; margin-bottom: 20px;'>
+            <i class='fas fa-file-alt' style='margin-right: 10px;'></i>Laporan Komprehensif Prediksi Lab
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ===== SUMMARY STATISTIK =====
+    st.markdown(
+        """
+        <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px;'>
+            <i class='fas fa-chart-pie'></i> Ringkasan Statistik Keseluruhan
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    sage_students = df_out[df_out["Prediksi Lab"] == "SAGE"]
+    delta_students = df_out[df_out["Prediksi Lab"] == "DELTA"]
+    total = len(df_out)
+    
+    sage_pct = len(sage_students) / total * 100
+    delta_pct = len(delta_students) / total * 100
+    sage_avg_conf = sage_students["Confidence"].mean()
+    delta_avg_conf = delta_students["Confidence"].mean()
+    overall_avg_conf = df_out["Confidence"].mean()
+
+    col1, col2, col3, col4 = st.columns(4, gap="medium")
+
+    with col1:
+        st.metric(
+            label="Total Mahasiswa",
+            value=total,
+            delta=None
+        )
+
+    with col2:
+        st.metric(
+            label="Lab SAGE",
+            value=len(sage_students),
+            delta=f"{sage_pct:.1f}%"
+        )
+
+    with col3:
+        st.metric(
+            label="Lab DELTA",
+            value=len(delta_students),
+            delta=f"{delta_pct:.1f}%"
+        )
+
+    with col4:
+        st.metric(
+            label="Avg Confidence",
+            value=f"{overall_avg_conf:.2f}%",
+            delta=None
+        )
+
+    st.markdown(
+        f"""
+        <div class='insight-box'>
+            <div class='insight-title'>
+                <i class='fas fa-info-circle'></i> Penjelasan Ringkasan Statistik
+            </div>
+            <div class='insight-text'>
+                Metrik di atas memberikan gambaran umum tentang distribusi dan akurasi prediksi laboratorium untuk seluruh populasi mahasiswa.
+                <br><br>
+                <strong>Total Mahasiswa:</strong><br>
+                Jumlah total mahasiswa yang dianalisis dalam sistem prediksi ini adalah <strong>{total} orang</strong>. Angka ini menjadi dasar perhitungan persentase untuk kedua laboratorium.
+                <br><br>
+                <strong>Distribusi Lab SAGE:</strong><br>
+                <strong>{len(sage_students)} mahasiswa ({sage_pct:.1f}%)</strong> diprediksi masuk Lab SAGE (Software Development & Architecture). Proporsi ini menunjukkan minat mahasiswa terhadap bidang engineering dan software development.
+                <br><br>
+                <strong>Distribusi Lab DELTA:</strong><br>
+                <strong>{len(delta_students)} mahasiswa ({delta_pct:.1f}%)</strong> diprediksi masuk Lab DELTA (Data Analytics & Business Intelligence). Proporsi ini menunjukkan minat mahasiswa terhadap bidang data science dan analytics.
+                <br><br>
+                <strong>Confidence Rata-rata Keseluruhan:</strong><br>
+                Tingkat kepercayaan model prediksi secara keseluruhan adalah <strong>{overall_avg_conf:.2f}%</strong>. Nilai ini menunjukkan seberapa akurat dan reliabel prediksi model untuk semua mahasiswa. Semakin tinggi nilai ini, semakin percaya diri model dalam memberikan rekomendasi laboratorium.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+
+    # ===== DISTRIBUSI CONFIDENCE =====
+    st.markdown(
+        """
+        <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px;'>
+            <i class='fas fa-chart-area'></i> Distribusi Confidence Level
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    fig_conf_dist = go.Figure()
+
+    fig_conf_dist.add_trace(go.Histogram(
+        x=sage_students["Confidence"],
+        name="SAGE",
+        nbinsx=20,
+        marker_color="#6B0F1A",
+        opacity=0.7
+    ))
+
+    fig_conf_dist.add_trace(go.Histogram(
+        x=delta_students["Confidence"],
+        name="DELTA",
+        nbinsx=20,
+        marker_color="#6B7280",
+        opacity=0.7
+    ))
+
+    fig_conf_dist.update_layout(
+        title="Distribusi Confidence Level per Laboratorium",
+        xaxis_title="Confidence Level (%)",
+        yaxis_title="Jumlah Mahasiswa",
+        barmode="overlay",
+        height=400,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        hovermode="x unified",
+        transition=dict(duration=800, easing="cubic-out"),
+        xaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB"),
+        yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB")
+    )
+
+    st.plotly_chart(fig_conf_dist, use_container_width=True)
+
+    st.markdown(
+        f"""
+        <div class='insight-box'>
+            <div class='insight-title'>
+                <i class='fas fa-lightbulb'></i> Penjelasan Distribusi Confidence
+            </div>
+            <div class='insight-text'>
+                Histogram ini menunjukkan sebaran confidence level untuk kedua laboratorium, memberikan insight tentang kualitas prediksi.
+                <br><br>
+                <strong>Puncak Distribusi (Peak):</strong><br>
+                Batang tertinggi menunjukkan range confidence level yang paling banyak terjadi di masing-masing lab. Puncak yang lebih tinggi menunjukkan lebih banyak prediksi dengan confidence pada level tersebut.
+                <br><br>
+                <strong>Perbandingan SAGE (Maroon) vs DELTA (Abu-abu):</strong><br>
+                • Jika SAGE memiliki puncak lebih tinggi di area >80%, menunjukkan prediksi yang lebih confident<br>
+                • Jika DELTA memiliki distribusi lebih tersebar, menunjukkan variabilitas prediksi lebih tinggi<br>
+                • Overlap antar warna menunjukkan ada mahasiswa dengan confidence yang mirip di kedua lab<br>
+                <br>
+                <strong>Interpretasi untuk Pengambilan Keputusan:</strong><br>
+                • Mahasiswa dengan confidence >80%: Prediksi sangat akurat, bisa langsung masuk lab<br>
+                • Mahasiswa dengan confidence 60-80%: Rekomendasi bagus, tapi ada pertimbangan lain<br>
+                • Mahasiswa dengan confidence <60%: Perlu konsultasi lebih lanjut sebelum keputusan final
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+
+    # ===== TABEL DETAIL PREDIKSI =====
+    st.markdown(
+        """
+        <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px;'>
+            <i class='fas fa-table'></i> Tabel Detail Prediksi Semua Mahasiswa
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    detail_table = df_out[[
+        "Nama Lengkap",
+        "Prediksi Lab",
+        "Confidence",
+        "Probabilitas SAGE",
+        "Probabilitas DELTA"
+    ]].copy()
+
+    detail_table["Confidence"] = detail_table["Confidence"].apply(lambda x: f"{x:.2f}%")
+    detail_table["Probabilitas SAGE"] = detail_table["Probabilitas SAGE"].apply(lambda x: f"{x:.2f}%")
+    detail_table["Probabilitas DELTA"] = detail_table["Probabilitas DELTA"].apply(lambda x: f"{x:.2f}%")
+    detail_table.columns = ["Nama Mahasiswa", "Lab Prediksi", "Confidence", "Prob SAGE", "Prob DELTA"]
+
+    st.dataframe(detail_table, use_container_width=True, hide_index=True)
+
+    st.markdown(
+        f"""
+        <div class='insight-box'>
+            <div class='insight-title'>
+                <i class='fas fa-info-circle'></i> Penjelasan Tabel Detail Prediksi
+            </div>
+            <div class='insight-text'>
+                Tabel ini menampilkan detail prediksi untuk setiap mahasiswa dengan informasi lengkap tentang keputusan dan confidence level.
+                <br><br>
+                <strong>Nama Mahasiswa:</strong><br>
+                Identitas unik setiap mahasiswa untuk tracking dan verifikasi hasil prediksi.
+                <br><br>
+                <strong>Lab Prediksi:</strong><br>
+                Rekomendasi laboratorium akhir untuk mahasiswa tersebut (SAGE atau DELTA) berdasarkan hasil analisis machine learning.
+                <br><br>
+                <strong>Confidence:</strong><br>
+                Tingkat kepercayaan model terhadap prediksi untuk mahasiswa tersebut. Nilai tinggi (>80%) berarti model sangat yakin dengan rekomendasi.
+                <br><br>
+                <strong>Probabilitas SAGE:</strong><br>
+                Persentase probabilitas bahwa mahasiswa cocok dengan Lab SAGE berdasarkan profil akademik dan aktivitas mereka.
+                <br><br>
+                <strong>Probabilitas DELTA:</strong><br>
+                Persentase probabilitas bahwa mahasiswa cocok dengan Lab DELTA berdasarkan profil akademik dan aktivitas mereka.
+                <br><br>
+                <strong>Catatan Penting:</strong><br>
+                • Selisih antara Prob SAGE dan Prob DELTA menunjukkan seberapa jelas keputusan (semakin besar selisih, semakin jelas)<br>
+                • Jika selisih kecil (<10%), hasil diperdebatkan (borderline case) dan perlu pertimbangan khusus<br>
+                • Data ini dapat digunakan untuk tracking dan follow-up dengan mahasiswa mengenai pilihan lab mereka
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+
+    # ===== KESIMPULAN & REKOMENDASI =====
+    st.markdown(
+        """
+        <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px;'>
+            <i class='fas fa-flag-checkered'></i> Kesimpulan & Rekomendasi Akhir
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    high_conf_count = len(df_out[df_out["Confidence"] >= 80])
+    medium_conf_count = len(df_out[(df_out["Confidence"] >= 60) & (df_out["Confidence"] < 80)])
+    low_conf_count = len(df_out[df_out["Confidence"] < 60])
+
+    st.markdown(
+        f"""
+        <div class='insight-box'>
+            <div class='insight-title'>
+                <i class='fas fa-check-circle'></i> Kesimpulan Analisis Komprehensif
+            </div>
+            <div class='insight-text'>
+                <strong>Hasil Prediksi Keseluruhan:</strong><br>
+                Dari <strong>{total} mahasiswa</strong> yang dianalisis, model machine learning memberikan prediksi dengan akurasi rata-rata <strong>{overall_avg_conf:.2f}%</strong>. Distribusi mahasiswa menunjukkan bahwa <strong>{len(sage_students)} mahasiswa ({sage_pct:.1f}%)</strong> lebih cocok dengan Lab SAGE, sedangkan <strong>{len(delta_students)} mahasiswa ({delta_pct:.1f}%)</strong> lebih cocok dengan Lab DELTA.
+                <br><br>
+                <strong>Kualitas Prediksi:</strong><br>
+                • <strong>Kualitas Tinggi (Confidence ≥ 80%):</strong> {high_conf_count} mahasiswa ({high_conf_count/total*100:.1f}%) - Prediksi sangat akurat, dapat langsung diimplementasikan<br>
+                • <strong>Kualitas Sedang (Confidence 60-80%):</strong> {medium_conf_count} mahasiswa ({medium_conf_count/total*100:.1f}%) - Prediksi baik, perlu pertimbangan minor<br>
+                • <strong>Kualitas Rendah (Confidence < 60%):</strong> {low_conf_count} mahasiswa ({low_conf_count/total*100:.1f}%) - Perlu konsultasi mendalam sebelum keputusan final<br>
+                <br>
+                <strong>Rekomendasi Implementasi:</strong><br>
+                ✓ <strong>Immediate Action:</strong> Mahasiswa berkualitas tinggi dapat langsung ditempatkan di lab prediksi<br>
+                ✓ <strong>Consultation Required:</strong> Mahasiswa berkualitas sedang perlu diskusi dengan academic advisor<br>
+                ✓ <strong>Special Review:</strong> Mahasiswa berkualitas rendah perlu assessment ulang dan konsultasi intensif<br>
+                ✓ <strong>Monitoring:</strong> Pantau performa mahasiswa setelah penempatan untuk validasi model<br>
+                ✓ <strong>Continuous Improvement:</strong> Gunakan feedback untuk meningkatkan akurasi model di masa depan
+                <br><br>
+                <strong>Nilai Strategis Analisis Ini:</strong><br>
+                • Menyediakan dasar data-driven untuk keputusan penempatan laboratorium<br>
+                • Membantu mahasiswa memahami kekuatan akademik mereka<br>
+                • Memungkinkan institusi mengoptimalkan alokasi resources per laboratorium<br>
+                • Memberikan transparansi dalam proses seleksi berdasarkan profil objektif<br>
+                • Mendukung akreditasi dan improvement program berkelanjutan
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+
+    # ===== DOWNLOAD PDF PROFESIONAL =====
+    st.markdown(
+        """
+        <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px;'>
+            <i class='fas fa-file-pdf'></i> Unduh Laporan PDF Profesional
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Generate PDF
+    pdf_buffer = generate_pdf_report(
+        df_out=df_out,
+        detail_table=detail_table,
+        overall_avg_conf=overall_avg_conf,
+        sage_students=sage_students,
+        delta_students=delta_students,
+        total=total
+    )
+
+    col_pdf1, col_pdf2 = st.columns(2, gap="large")
+
+    with col_pdf1:
+        st.download_button(
+            label="↓ Unduh PDF Lengkap",
+            data=pdf_buffer.getvalue(),
+            file_name="laporan_prediksi_lab.pdf",
+            mime="application/pdf",
+            help="Download laporan lengkap dalam format PDF profesional",
+            use_container_width=True
+        )
+
+    with col_pdf2:
+        st.info("Format PDF mencakup: Ringkasan, Kualitas Prediksi, Detail Sampel, Rekomendasi, dan Kesimpulan")
+
+    st.markdown(
+        """
+        <div class='insight-box'>
+            <div class='insight-title'>
+                <i class='fas fa-info-circle'></i> Fitur PDF Profesional
+            </div>
+            <div class='insight-text'>
+                <strong>Konten Laporan PDF:</strong><br/>
+                • Header dengan judul dan informasi dokumen resmi<br/>
+                • Ringkasan statistik lengkap (4 metrik utama)<br/>
+                • Analisis kualitas prediksi (3 kategori)<br/>
+                • Tabel detail sampel 20 mahasiswa pertama<br/>
+                • Rekomendasi implementasi praktis (5 poin)<br/>
+                • Kesimpulan dan insights akhir<br/>
+                • Footer dengan tanggal generation<br/>
+                <br/>
+                <strong>Karakteristik Format:</strong><br/>
+                • Page size A4 dengan margin profesional<br/>
+                • Header berwarna maroon (#6B0F1A)<br/>
+                • Table styling konsisten dan rapi<br/>
+                • Font readable dan profesional (Helvetica)<br/>
+                • Automatic page break untuk data panjang<br/>
+                • Siap untuk printing dan presentasi formal
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
 # =========================
-# 22. TAB 5: EXPORT
+# 23. TAB 5: EXPORT
 # =========================
 with tab_export:
     st.markdown(
@@ -2079,13 +2720,28 @@ with tab_export:
     ]
     out_df = df_out[out_cols].copy()
 
-    # ===== DOWNLOAD BUTTONS =====
-    col1, col2 = st.columns(2, gap="large")
+    # ===== DOWNLOAD BUTTONS - 3 KOLOM =====
+    col1, col2, col3 = st.columns(3, gap="large")
 
+    # ===== EXPORT CSV =====
     with col1:
-        csv = out_df.to_csv(index=False)
+        st.markdown(
+            """
+            <div style='text-align: center; padding: 15px; background-color: #F3F4F6; border-radius: 8px; border-left: 4px'>
+                <div style='font-size: 14px; font-weight: 700; color: #6B0F1A; margin-bottom: 10px;'>
+                    <i class='fas fa-file-csv'></i> Format CSV
+                </div>
+                <div style='font-size: 12px; color: #6B7280; margin-bottom: 15px;'>
+                    Universal dan kompatibel dengan semua aplikasi
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        csv = out_df.to_csv(index=False, encoding='utf-8-sig')
         st.download_button(
-            "Unduh sebagai CSV",
+            "↓ Unduh CSV",
             csv,
             "hasil_peminatan.csv",
             "text/csv",
@@ -2094,7 +2750,22 @@ with tab_export:
         )
         st.caption("✓ Format: CSV (kompatibel dengan Excel, Google Sheets, dll)")
 
+    # ===== EXPORT EXCEL =====
     with col2:
+        st.markdown(
+            """
+            <div style='text-align: center; padding: 15px; background-color: #F3F4F6; border-radius: 8px; border-left: 4px'>
+                <div style='font-size: 14px; font-weight: 700; color: #6B0F1A; margin-bottom: 10px;'>
+                    <i class='fas fa-file-excel'></i> Format Excel
+                </div>
+                <div style='font-size: 12px; color: #6B7280; margin-bottom: 15px;'>
+                    Dengan 2 sheet untuk kemudahan navigasi
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
             df_out.to_excel(writer, sheet_name="Data Lengkap", index=False)
@@ -2102,7 +2773,7 @@ with tab_export:
         buffer.seek(0)
 
         st.download_button(
-            "Unduh sebagai Excel",
+            "↓ Unduh Excel",
             buffer,
             "hasil_peminatan_full.xlsx",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -2111,6 +2782,52 @@ with tab_export:
         )
         st.caption("✓ Format: Excel (.xlsx) - 2 sheet (Data Lengkap & Prediksi)")
 
+    # ===== EXPORT PDF =====
+    with col3:
+        st.markdown(
+            """
+            <div style='text-align: center; padding: 15px; background-color: #F3F4F6; border-radius: 8px; border-left: 4px'>
+                <div style='font-size: 14px; font-weight: 700; color: #6B0F1A; margin-bottom: 10px;'>
+                    <i class='fas fa-file-pdf'></i> Format PDF
+                </div>
+                <div style='font-size: 12px; color: #6B7280; margin-bottom: 15px;'>
+                    Laporan profesional siap cetak
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Generate PDF Report
+        sage_students = df_out[df_out["Prediksi Lab"] == "SAGE"]
+        delta_students = df_out[df_out["Prediksi Lab"] == "DELTA"]
+        total = len(df_out)
+        overall_avg_conf = df_out["Confidence"].mean()
+
+        detail_table = out_df.copy()
+        detail_table["Probabilitas SAGE"] = detail_table["Probabilitas SAGE"].apply(lambda x: f"{x:.2f}%")
+        detail_table["Probabilitas DELTA"] = detail_table["Probabilitas DELTA"].apply(lambda x: f"{x:.2f}%")
+        detail_table["Confidence"] = detail_table["Confidence"].apply(lambda x: f"{x:.2f}%")
+
+        pdf_buffer = generate_pdf_report(
+            df_out=df_out,
+            detail_table=detail_table,
+            overall_avg_conf=overall_avg_conf,
+            sage_students=sage_students,
+            delta_students=delta_students,
+            total=total
+        )
+
+        st.download_button(
+            "↓ Unduh PDF",
+            pdf_buffer.getvalue(),
+            "laporan_prediksi_peminatan.pdf",
+            "application/pdf",
+            use_container_width=True,
+            key="pdf_export"
+        )
+        st.caption("✓ Format: PDF - Laporan lengkap profesional")
+
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # ===== EXPORT GUIDE =====
@@ -2118,29 +2835,36 @@ with tab_export:
         """
         <div class='insight-box'>
             <div class='insight-title'>
-                <i class='fas fa-download'></i> Panduan Export
+                <i class='fas fa-book'></i> Panduan Penggunaan Export
             </div>
             <div class='insight-text'>
-                <strong>CSV (Comma Separated Values):</strong>
+                <strong>CSV (Comma Separated Values):</strong><br>
                 Gunakan untuk import ke aplikasi lain atau analisis lebih lanjut di Python/R. 
                 Format ini universal dan dapat dibuka di berbagai aplikasi spreadsheet.
                 <br><br>
-                <strong>Excel (.xlsx):</strong>
+                <strong>Excel (.xlsx):</strong><br>
                 Gunakan untuk presentasi atau sharing dengan stakeholder yang lebih familiar dengan Excel.
                 File ini memiliki 2 sheet terpisah untuk kemudahan navigasi.
                 <br><br>
+                <strong>PDF (Portable Document Format):</strong><br>
+                Gunakan untuk laporan formal, presentasi, atau archiving. Format ini mempertahankan 
+                formatting dan siap untuk printing tanpa perlu persiapan tambahan.
+                <br><br>
                 <strong>Kolom yang di-export:</strong><br>
-                &bull; <strong>NIM:</strong> Nomor identitas mahasiswa<br>
-                &bull; <strong>Nama Lengkap:</strong> Nama lengkap mahasiswa<br>
-                &bull; <strong>Kelas:</strong> Kelas/angkatan mahasiswa<br>
-                &bull; <strong>Prediksi Lab:</strong> Hasil prediksi (SAGE atau DELTA)<br>
-                &bull; <strong>Probabilitas SAGE:</strong> Persentase prediksi ke Lab SAGE (0-100%)<br>
-                &bull; <strong>Probabilitas DELTA:</strong> Persentase prediksi ke Lab DELTA (0-100%)<br>
-                &bull; <strong>Confidence:</strong> Tingkat kepercayaan model terhadap prediksi (0-100%)<br><br>
+                • <strong>NIM:</strong> Nomor identitas mahasiswa<br>
+                • <strong>Nama Lengkap:</strong> Nama lengkap mahasiswa<br>
+                • <strong>Kelas:</strong> Kelas/angkatan mahasiswa<br>
+                • <strong>Prediksi Lab:</strong> Hasil prediksi (SAGE atau DELTA)<br>
+                • <strong>Probabilitas SAGE:</strong> Persentase prediksi ke Lab SAGE (0-100%)<br>
+                • <strong>Probabilitas DELTA:</strong> Persentase prediksi ke Lab DELTA (0-100%)<br>
+                • <strong>Confidence:</strong> Tingkat kepercayaan model terhadap prediksi (0-100%)<br>
+                <br>
                 <strong>Tips Penggunaan:</strong><br>
-                &bull; Gunakan Confidence Score untuk filter data berkualitas tinggi (> 80%)<br>
-                &bull; Bandingkan Probabilitas SAGE & DELTA untuk melihat margin prediksi<br>
-                &bull; Ekspor secara berkala untuk tracking progress mahasiswa
+                • Gunakan Confidence Score untuk filter data berkualitas tinggi (> 80%)<br>
+                • Bandingkan Probabilitas SAGE & DELTA untuk melihat margin prediksi<br>
+                • Ekspor secara berkala untuk tracking progress mahasiswa<br>
+                • Gunakan PDF untuk dokumentasi dan presentasi resmi<br>
+                • Gunakan Excel untuk analisis lanjutan dan formatting custom
             </div>
         </div>
         """,
@@ -2148,7 +2872,7 @@ with tab_export:
     )
 
 # =========================
-# 23. FOOTER
+# 24. FOOTER
 # =========================
 st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
