@@ -120,25 +120,48 @@ def get_angkatan_info(df):
 
 
 # =========================
-# FUNGSI HELPER: INSTALL KALEIDO OTOMATIS
+# PERBAIKAN: AUTO INSTALL KALEIDO & CHROME
 # =========================
-def ensure_kaleido_installed():
-    """Pastikan Kaleido terinstall untuk export image"""
+
+import subprocess
+import sys
+import os
+import platform
+
+def ensure_kaleido_and_chrome():
+    """Pastikan Kaleido dan Chrome terinstall"""
     try:
         import kaleido
+        print("✓ Kaleido sudah terinstall")
         return True
     except ImportError:
-        st.warning("⚠️ Menginstall Kaleido untuk export chart ke PDF...")
+        print("⚠️ Menginstall Kaleido...")
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "kaleido", "-q"])
-            st.success("✓ Kaleido berhasil diinstall!")
+            # Install kaleido
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "kaleido", "-q"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            print("✓ Kaleido berhasil diinstall")
+            
+            # Install Chrome otomatis
+            print("⚠️ Menginstall Chrome untuk Kaleido...")
+            subprocess.check_call(
+                [sys.executable, "-m", "plotly_get_chrome"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            print("✓ Chrome berhasil diinstall")
             return True
+            
         except Exception as e:
-            st.error(f"❌ Gagal install Kaleido: {e}")
+            print(f"⚠️ Error install: {e}")
             return False
 
 # Jalankan saat startup
-ensure_kaleido_installed()
+ensure_kaleido_and_chrome()
+
 
 # =========================
 # PERBAIKAN FUNGSI GENERATE PDF REPORT
@@ -325,7 +348,7 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
             font=dict(size=11, family="Arial"),
             showlegend=True,
             legend=dict(
-                x=0.02,
+                x=1,
                 y=0.98,
                 xanchor='left',
                 yanchor='top',
