@@ -3457,7 +3457,7 @@ with tab_export:
     with col1:
         st.markdown(
             """
-            <div style='text-align: center; padding: 15px; background-color: #F3F4F6; border-radius: 8px; border-left: 4px solid #6B0F1A;'>
+            <div style='text-align: center; padding: 15px; background-color: #F3F4F6; border-radius: 8px; border-left: 4px;'>
                 <div style='font-size: 14px; font-weight: 700; color: #6B0F1A; margin-bottom: 10px;'>
                     <i class='fas fa-file-csv'></i> Format CSV
                 </div>
@@ -3484,7 +3484,7 @@ with tab_export:
     with col2:
         st.markdown(
             """
-            <div style='text-align: center; padding: 15px; background-color: #F3F4F6; border-radius: 8px; border-left: 4px solid #6B0F1A;'>
+            <div style='text-align: center; padding: 15px; background-color: #F3F4F6; border-radius: 8px; border-left: 4px ;'>
                 <div style='font-size: 14px; font-weight: 700; color: #6B0F1A; margin-bottom: 10px;'>
                     <i class='fas fa-file-excel'></i> Format Excel
                 </div>
@@ -3516,7 +3516,7 @@ with tab_export:
     with col3:
         st.markdown(
             """
-            <div style='text-align: center; padding: 15px; background-color: #F3F4F6; border-radius: 8px; border-left: 4px solid #6B0F1A;'>
+            <div style='text-align: center; padding: 15px; background-color: #F3F4F6; border-radius: 8px; border-left: 4px;'>
                 <div style='font-size: 14px; font-weight: 700; color: #6B0F1A; margin-bottom: 10px;'>
                     <i class='fas fa-file-pdf'></i> Format PDF
                 </div>
