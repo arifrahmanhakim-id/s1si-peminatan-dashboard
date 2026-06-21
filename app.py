@@ -3409,7 +3409,19 @@ with tab_report:
         )
 
     with col_pdf2:
-        st.info("Format PDF mencakup: Ringkasan, Kualitas, Detail, Rekomendasi, Kesimpulan")
+        st.markdown(
+        """
+        <div style="
+            background-color:#e8f4ff;
+            padding:12px;
+            border-radius:8px;
+            font-size:14px;
+            border-left:5px solid #1f77b4;">
+            Format PDF mencakup: Ringkasan, Kualitas, Detail, Rekomendasi, dan Kesimpulan.
+        </div>
+        """,
+        unsafe_allow_html=True
+        )
 
     st.markdown(
         """
