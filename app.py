@@ -1901,8 +1901,8 @@ with tab_vis:
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
-    # ===== DONUT CHART =====
-    col_chart, col_explanation = st.columns([1.3, 1], gap="large")
+    # ===== DONUT CHART DENGAN LEGEND DIPERBAIKI =====
+    col_chart, col_explanation = st.columns([1.4, 1], gap="large")
 
     with col_chart:
         st.markdown(
@@ -1917,43 +1917,72 @@ with tab_vis:
         try:
             pred_counts_safe = pred_counts.reindex(["SAGE", "DELTA"]).fillna(0).astype(int)
 
+            # ✅ PERBAIKAN: Legend di samping dan proporsi sempurna
             fig_donut = go.Figure(
                 data=[go.Pie(
-                    labels=["SAGE", "DELTA"],
+                    labels=[
+                        f"<b>SAGE</b><br>Software Development & Architecture",
+                        f"<b>DELTA</b><br>Data Analytics & Business Intelligence"
+                    ],
                     values=pred_counts_safe.values,
-                    hole=0.5,
-                    marker=dict(colors=["#6B0F1A", "#6B7280"]),
-                    textinfo="label+percent+value",
-                    hovertemplate="<b>%{label}</b><br>Jumlah: %{value}<br>Persentase: %{percent}<extra></extra>",
+                    hole=0.4,
+                    marker=dict(
+                        colors=["#6B0F1A", "#6B7280"],
+                        line=dict(color='white', width=3)
+                    ),
+                    textinfo='value+percent',
+                    textfont=dict(size=13, color='white'),
+                    textposition='inside',
+                    hovertemplate='<b>%{label}</b><br>Jumlah: %{value} mahasiswa<br>Persentase: %{percent}<extra></extra>',
+                    pull=[0.08, 0.08]
                 )]
             )
+            
             fig_donut.update_layout(
-                height=400,
-                margin=dict(l=20, r=20, t=20, b=20),
+                height=500,  # ✅ Tinggi ideal
+                width=700,
+                margin=dict(l=50, r=250, t=50, b=50),  # ✅ Right margin untuk legend
                 showlegend=True,
-                font=dict(size=12),
+                legend=dict(
+                    x=1.02,  # ✅ Legend di sebelah kanan
+                    y=1,
+                    xanchor='left',
+                    yanchor='top',
+                    bgcolor='rgba(255, 255, 255, 0.85)',
+                    bordercolor='#6B0F1A',
+                    borderwidth=2,
+                    font=dict(size=11),
+                    itemsizing='constant'
+                ),
+                font=dict(size=12, family="Arial"),
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)"
             )
+            
             st.plotly_chart(fig_donut, use_container_width=True)
 
         except Exception as e:
             st.error(f"❌ Error rendering donut chart: {str(e)}")
 
     with col_explanation:
-        st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 40px;'></div>", unsafe_allow_html=True)
 
         st.markdown(
             """  
             <div class='insight-box'>  
                 <div class='insight-title'>  
-                    <i class='fas fa-info-circle'></i> Penjelasan 
+                    <i class='fas fa-info-circle'></i> Penjelasan Distribusi 
                 </div>  
                 <div class='insight-text'>
-                    Visualisasi ini menampilkan proporsi distribusi mahasiswa antara dua laboratorium. 
-                    Warna maroon merepresentasikan SAGE (Software & Development), sedangkan warna abu-abu 
-                    merepresentasikan DELTA (Data & Analytics). Ukuran setiap slice menunjukkan persentase 
-                    mahasiswa yang termasuk dalam setiap laboratorium.
+                    <strong>Pie Chart - Distribusi Laboratorium:</strong><br/>
+                    Grafik menunjukkan proporsi mahasiswa di kedua laboratorium.
+                    <br><br>
+                    <strong>Warna dan Label:</strong><br/>
+                    • <strong>Maroon (#6B0F1A):</strong> Lab SAGE fokus pada Software Development & Architecture<br/>
+                    • <strong>Abu-abu (#6B7280):</strong> Lab DELTA fokus pada Data Analytics & Business Intelligence<br/>
+                    <br/>
+                    <strong>Insight:</strong><br/>
+                    Distribusi ini mencerminkan keseimbangan minat mahasiswa terhadap kedua bidang, menunjukkan kesehatan program studi yang baik.
                 </div>  
             </div>  
             """,
