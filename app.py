@@ -305,7 +305,7 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students,
     )
     
     # ===== HALAMAN PERTAMA: JUDUL & INFO DOKUMEN =====
-    story.append(Paragraph("LAPORAN KOMPREHENSIF", title_style))
+    story.append(Paragraph("LAPORAN", title_style))
     story.append(Paragraph("Prediksi Penempatan Laboratorium", title_style))
     story.append(Spacer(1, 0.2*inch))
     
