@@ -3452,10 +3452,20 @@ with tab_profile:
     unsafe_allow_html=True
     )
 
-    st.info("""
-    Halaman Profil Laboratorium sedang dalam tahap pengembangan. Fitur ini akan tersedia pada versi berikutnya.    
-    Fitur ini akan tersedia pada versi berikutnya. 
-    """)
+    st.markdown(
+        """
+        <div style="
+            background-color:#e8f4ff;
+            padding:12px;
+            border-radius:8px;
+            font-size:12px;
+            border-left:5px solid #1f77b4;">
+            Halaman Profil Laboratorium sedang dalam tahap pengembangan. Fitur ini akan tersedia pada versi berikutnya.<br>
+            Fitur ini akan tersedia pada versi berikutnya. 
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # =============================================================================
 # BAGIAN 22: TAB REKOMENDASI
@@ -3483,10 +3493,20 @@ with tab_rec:
         unsafe_allow_html=True
     )
 
-    st.info("""
-    Smart Recommendation Engine berbasis machine learning yang menyesuaikan hasil prediksi dan dirancang untuk berkembang menjadi AI-based system.    
-    Fitur ini akan tersedia pada versi berikutnya. 
-    """)
+    st.markdown(
+        """
+        <div style="
+            background-color:#e8f4ff;
+            padding:12px;
+            border-radius:8px;
+            font-size:12px;
+            border-left:5px solid #1f77b4;">
+            Smart Recommendation Engine berbasis machine learning yang menyesuaikan hasil prediksi dan berkembang menjadi AI-based system.<br>
+            Fitur ini akan tersedia pada versi berikutnya.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # =============================================================================
 # BAGIAN 23: TAB ANALYTICS
@@ -3514,10 +3534,20 @@ with tab_analytics:
         unsafe_allow_html=True
     )
 
-    st.info("""
-    Menampilkan analisis data, visualisasi, dan insight dari model machine learning.    
-    Fitur ini akan tersedia pada versi berikutnya. 
-    """)
+    st.markdown(
+        """
+        <div style="
+            background-color:#e8f4ff;
+            padding:12px;
+            border-radius:8px;
+            font-size:12px;
+            border-left:5px solid #1f77b4;">
+            Menampilkan analisis data, visualisasi, dan insight dari model machine learning.<br>
+            Fitur ini akan tersedia pada versi berikutnya.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # =============================================================================
 # BAGIAN 24: TAB 6 - EXPORT DATA
