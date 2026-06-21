@@ -1832,14 +1832,17 @@ count_delta = int((df_out["Prediksi Lab"] == "DELTA").sum())
 # =============================================================================
 
 # Buat 6 tabs untuk berbagai analisis
-tab_summary, tab_table, tab_vis, tab_comparative, tab_report, tab_export = st.tabs([
-    "Ringkasan",
-    "Data Tabel",
-    "Visualisasi",
-    "Perbandingan",
-    "Laporan",
-    "Export"
-])
+tab_summary, tab_table, tab_vis, tab_comparative, tab_report, tab_profile, tab_rec, tab_analytics, tab_export = st.tabs([
+    "⊞ Ringkasan",
+    "⊟ Data Tabel",
+    "◈ Visualisasi",
+    "⇄ Perbandingan",
+    "▤ Laporan",
+    "◎ Profil Lab",
+    "◇ Rekomendasi",
+    "◬ Analytics",
+    "⇩ Export"
+    ])
 
 # =============================================================================
 # BAGIAN 16: TAB 1 - RINGKASAN (SUMMARY)
@@ -3425,7 +3428,99 @@ with tab_report:
     )
 
 # =============================================================================
-# BAGIAN 21: TAB 6 - EXPORT DATA
+# BAGIAN 21: TAB PROFIL LAB
+# =============================================================================
+
+with tab_profile:
+
+    st.markdown(
+        """
+        <div style='font-size: 20px; font-weight: 700; color: #6B0F1A; margin-bottom: 20px;'>
+            <i class='fas fa-users' style='margin-right: 10px;'></i>Profil Laboratorium
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+    """
+        <div style="font-size:20px;font-weight:700;margin-bottom:10px;">
+            <i class='fas fa-robot' style='margin-right:10px;'></i>
+            COMING SOON
+        </div>
+    <div style="font-size:14px;opacity:0.9;">
+        Halaman Profil Laboratorium sedang dalam tahap pengembangan.
+    </div>
+    """,
+    unsafe_allow_html=True
+    )
+
+    st.info("🚀 Fitur ini akan tersedia pada versi berikutnya.")
+
+# =============================================================================
+# BAGIAN 22: TAB REKOMENDASI
+# =============================================================================
+
+with tab_rec:
+
+    st.markdown(
+        """
+        <div style='font-size: 20px; font-weight: 700; color: #6B0F1A; margin-bottom: 20px;'>
+            <i class='fas fa-lightbulb' style='margin-right: 10px;'></i>
+            Sistem Rekomendasi
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        """
+        <div style="font-size:20px;font-weight:700;margin-bottom:10px;">
+            <i class='fas fa-robot' style='margin-right:10px;'></i>
+            COMING SOON
+        </div>
+        <div style="font-size:14px;opacity:0.9;">
+        Smart Recommendation Engine, sistem rekomendasi berbasis machine learning yang menyesuaikan hasil prediksi dan dirancang untuk berkembang menjadi AI-based system.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.info("🚀 Fitur ini akan tersedia pada versi berikutnya.")
+
+# =============================================================================
+# BAGIAN 23: TAB ANALYTICS
+# =============================================================================
+
+with tab_analytics:
+
+    st.markdown(
+        """
+        <div style='font-size: 20px; font-weight: 700; color: #6B0F1A; margin-bottom: 20px;'>
+            <i class='fas fa-chart-line' style='margin-right: 10px;'></i>
+            Analytics Dashboard
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        """
+        <div style="font-size:20px;font-weight:700;margin-bottom:10px;">
+            <i class='fas fa-robot' style='margin-right:10px;'></i>
+            COMING SOON
+        </div>
+        <div style="font-size:14px;opacity:0.9;">
+            Menampilkan analisis data, visualisasi, dan insight dari model machine learning.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.info("🚀 Fitur ini akan tersedia pada versi berikutnya.")
+
+# =============================================================================
+# BAGIAN 24: TAB 6 - EXPORT DATA
 # =============================================================================
 
 with tab_export:
@@ -3597,7 +3692,7 @@ with tab_export:
     )
 
 # =============================================================================
-# BAGIAN 22: FOOTER
+# BAGIAN 25: FOOTER
 # =============================================================================
 
 st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
