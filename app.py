@@ -3454,7 +3454,7 @@ with tab_profile:
     )
 
     # ===== TABS UNTUK DUA LABORATORIUM =====
-    lab_sage, lab_delta = st.tabs(["◎ SAGE Lab", "δ DELTA Lab"])
+    lab_sage, lab_delta = st.tabs(["⧉ SAGE Lab", "δ DELTA Lab"])
 
     # ===== TAB SAGE LAB =====
     with lab_sage:
