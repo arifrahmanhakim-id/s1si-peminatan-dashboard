@@ -1701,8 +1701,8 @@ st.markdown(
             Dashboard Peminatan Laboratorium
         </div>
         <div class='header-subtitle'>
-            Sistem prediksi minat mahasiswa S1 Sistem Informasi ke Laboratorium SAGE (Software & Development) 
-            atau DELTA (Data & Analytics) berbasis nilai akademik dan aktivitas tambahan.
+            Sistem prediksi minat mahasiswa S1 Sistem Informasi ke Laboratorium SAGE (Software Development & Architecture) 
+            atau DELTA (Data Analytics & Business Intelligence) berbasis nilai akademik dan aktivitas tambahan.
         </div>
     </div>
     """,
@@ -3444,40 +3444,684 @@ with tab_report:
 # =============================================================================
 
 with tab_profile:
-
     st.markdown(
         """
         <div style='font-size: 20px; font-weight: 700; color: #6B0F1A; margin-bottom: 20px;'>
-            <i class='fas fa-users' style='margin-right: 10px;'></i>Profil Laboratorium
+            <i class='fas fa-building' style='margin-right: 10px;'></i>Profil Laboratorium
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.markdown(
-    """
-        <div style="font-size:20px;font-weight:700;margin-bottom:10px;">
-            <i class='fas fa-robot' style='margin-right:10px;'></i>
-            COMING SOON
-        </div>
-    """,
-    unsafe_allow_html=True
-    )
+    # ===== TABS UNTUK DUA LABORATORIUM =====
+    lab_sage, lab_delta = st.tabs(["◎ SAGE Lab", "δ DELTA Lab"])
 
-    st.markdown(
-        """
-        <div style="
-            background-color:#e8f4ff;
-            padding:12px;
-            border-radius:8px;
-            font-size:12px;
-            border-left:5px solid #1f77b4;">
-            Halaman Profil Laboratorium sedang dalam tahap pengembangan. Fitur ini akan tersedia pada versi berikutnya.<br>
-            Fitur ini akan tersedia pada versi berikutnya. 
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # ===== TAB SAGE LAB =====
+    with lab_sage:
+        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+        
+        # Header dengan Logo dari path file
+        col_logo_sage, col_info_sage = st.columns([1, 2.5], gap="large")
+        
+        with col_logo_sage:
+            # PENEMATAN LOGO DARI PATH FILE
+            logo_sage_path = "logo_sage.png"  # ← GANTI DENGAN PATH LOGO ANDA
+            
+            try:
+                st.image(
+                    logo_sage_path,
+                    use_container_width=True  # ← GUNAKAN INI
+                )
+            except FileNotFoundError:
+                # Fallback jika file tidak ditemukan
+                st.markdown(
+                    """
+                    <div style='
+                        width: 150px;
+                        height: 150px;
+                        background: linear-gradient(135deg, #6B0F1A 0%, #4A0A13 100%);
+                        border-radius: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 60px;
+                        color: white;
+                        box-shadow: 0 8px 16px rgba(107, 15, 26, 0.2);
+                    '>
+                        <i class='fas fa-code'></i>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                st.caption("Logo SAGE Lab (Default)")
+        
+        with col_info_sage:
+            st.markdown(
+                """
+                <div style='font-size: 28px; font-weight: 700; color: #6B0F1A; margin-bottom: 8px;'>
+                    SAGE Lab
+                </div>
+                <div style='font-size: 16px; color: #6B7280; margin-bottom: 16px; line-height: 1.6;'>
+                    <strong>Software and IT Governance Engineering Laboratory</strong>
+                </div>
+                <div style='font-size: 13px; color: #4B5563; line-height: 1.8;'>
+                    Lab SAGE adalah laboratorium yang berfokus pada pengembangan perangkat lunak, 
+                    arsitektur sistem, dan tata kelola IT. Mahasiswa di lab ini akan belajar 
+                    mengembangkan solusi software yang robust dan scalable.
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        
+        # ===== VISI DAN MISI SAGE =====
+        col_vm1, col_vm2 = st.columns(2, gap="large")
+        
+        with col_vm1:
+            st.markdown(
+                """
+                <div class='insight-box'>
+                    <div class='insight-title'>
+                        <i class='fas fa-eye'></i> Visi
+                    </div>
+                    <div class='insight-text'>
+                        Menjadi laboratorium terdepan dalam pengembangan solusi software dan 
+                        tata kelola IT yang inovatif, mendukung transformasi digital di 
+                        berbagai industri dengan standar internasional.
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        with col_vm2:
+            st.markdown(
+                """
+                <div class='insight-box'>
+                    <div class='insight-title'>
+                        <i class='fas fa-bullseye'></i> Misi
+                    </div>
+                    <div class='insight-text'>
+                        • Mengembangkan talenta dalam software engineering dan architecture<br>
+                        • Menciptakan solusi software yang berkualitas tinggi<br>
+                        • Mendorong inovasi dalam teknologi dan metodologi pengembangan<br>
+                        • Membangun ekosistem kolaborasi dengan industri IT
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        
+        # ===== BIDANG KEAHLIAN SAGE =====
+        st.markdown(
+            """
+            <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <i class='fas fa-star'></i> Bidang Keahlian
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        col_exp1, col_exp2, col_exp3 = st.columns(3, gap="large")
+        
+        with col_exp1:
+            st.markdown(
+                """
+                <div style='
+                    background: linear-gradient(135deg, rgba(107, 15, 26, 0.1) 0%, rgba(107, 15, 26, 0.05) 100%);
+                    border-left: 4px solid #6B0F1A;
+                    border-radius: 8px;
+                    padding: 16px;
+                    height: 100%;
+                '>
+                    <div style='font-size: 14px; font-weight: 700; color: #6B0F1A; margin-bottom: 12px;'>
+                        <i class='fas fa-code' style='margin-right: 8px;'></i>Software Development
+                    </div>
+                    <ul style='font-size: 13px; color: #4B5563; line-height: 1.8; margin: 0; padding-left: 20px;'>
+                        <li>Web Application Development</li>
+                        <li>Mobile App Development</li>
+                        <li>Desktop Application</li>
+                        <li>Full Stack Development</li>
+                        <li>API Development</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        with col_exp2:
+            st.markdown(
+                """
+                <div style='
+                    background: linear-gradient(135deg, rgba(107, 15, 26, 0.1) 0%, rgba(107, 15, 26, 0.05) 100%);
+                    border-left: 4px solid #6B0F1A;
+                    border-radius: 8px;
+                    padding: 16px;
+                    height: 100%;
+                '>
+                    <div style='font-size: 14px; font-weight: 700; color: #6B0F1A; margin-bottom: 12px;'>
+                        <i class='fas fa-layer-group' style='margin-right: 8px;'></i>System Architecture
+                    </div>
+                    <ul style='font-size: 13px; color: #4B5563; line-height: 1.8; margin: 0; padding-left: 20px;'>
+                        <li>Software Architecture Design</li>
+                        <li>Microservices Pattern</li>
+                        <li>Cloud Computing</li>
+                        <li>DevOps & Infrastructure</li>
+                        <li>System Integration</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        with col_exp3:
+            st.markdown(
+                """
+                <div style='
+                    background: linear-gradient(135deg, rgba(107, 15, 26, 0.1) 0%, rgba(107, 15, 26, 0.05) 100%);
+                    border-left: 4px solid #6B0F1A;
+                    border-radius: 8px;
+                    padding: 16px;
+                    height: 100%;
+                '>
+                    <div style='font-size: 14px; font-weight: 700; color: #6B0F1A; margin-bottom: 12px;'>
+                        <i class='fas fa-shield-alt' style='margin-right: 8px;'></i>IT Governance
+                    </div>
+                    <ul style='font-size: 13px; color: #4B5563; line-height: 1.8; margin: 0; padding-left: 20px;'>
+                        <li>IT Security & Compliance</li>
+                        <li>Quality Assurance</li>
+                        <li>Project Management</li>
+                        <li>Software Testing</li>
+                        <li>Risk Management</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        
+        # ===== TEKNOLOGI YANG DIGUNAKAN SAGE =====
+        st.markdown(
+            """
+            <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <i class='fas fa-toolbox'></i> Tech Stack & Tools
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        tech_sage = {
+            "Backend": ["Java", "Python", "Node.js", "C#", ".NET"],
+            "Frontend": ["React", "Vue.js", "Angular", "TypeScript"],
+            "Database": ["PostgreSQL", "MySQL", "MongoDB", "Oracle"],
+            "DevOps": ["Docker", "Kubernetes", "Jenkins", "GitLab CI/CD"],
+            "Cloud": ["AWS", "Azure", "Google Cloud", "DigitalOcean"],
+            "Tools": ["Git", "JIRA", "Postman", "VS Code", "IntelliJ"]
+        }
+        
+        cols_tech = st.columns(3, gap="large")
+        for idx, (category, tools) in enumerate(tech_sage.items()):
+            with cols_tech[idx % 3]:
+                st.markdown(
+                    f"""
+                    <div style='background: white; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px;'>
+                        <div style='font-size: 13px; font-weight: 700; color: #6B0F1A; margin-bottom: 12px;'>
+                            {category}
+                        </div>
+                        <div style='display: flex; flex-wrap: wrap; gap: 8px;'>
+                            {''.join([f'<span style="background: #6B0F1A; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">{tool}</span>' for tool in tools])}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        
+        # ===== FOKUS PENELITIAN DAN PROYEK SAGE =====
+        st.markdown(
+            """
+            <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <i class='fas fa-flask'></i> Fokus Penelitian & Proyek
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        research_sage = [
+            {
+                "title": "Cloud-Native Application Development",
+                "desc": "Mengembangkan aplikasi yang scalable dan resilient di cloud environment"
+            },
+            {
+                "title": "Microservices Architecture",
+                "desc": "Perancangan dan implementasi sistem berbasis microservices untuk enterprise"
+            },
+            {
+                "title": "DevOps & CI/CD Pipeline",
+                "desc": "Automation, testing, dan deployment process untuk software quality"
+            },
+            {
+                "title": "Cybersecurity & Compliance",
+                "desc": "Keamanan aplikasi dan compliance dengan regulasi industri"
+            }
+        ]
+        
+        for item in research_sage:
+            st.markdown(
+                f"""
+                <div style='
+                    background: white;
+                    border: 1px solid #E5E7EB;
+                    border-left: 4px solid #6B0F1A;
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 12px;
+                '>
+                    <div style='font-size: 14px; font-weight: 700; color: #6B0F1A; margin-bottom: 8px;'>
+                        ▸ {item['title']}
+                    </div>
+                    <div style='font-size: 13px; color: #6B7280; line-height: 1.6;'>
+                        {item['desc']}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        
+        # ===== PROFIL LULUSAN SAGE =====
+        st.markdown(
+            """
+            <div style='font-size: 16px; font-weight: 700; color: #6B0F1A; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <i class='fas fa-graduation-cap'></i> Profil Lulusan SAGE
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        col_profile1, col_profile2 = st.columns(2, gap="large")
+        
+        with col_profile1:
+            st.markdown(
+                """
+                <div class='insight-box'>
+                    <div class='insight-title'>
+                        <i class='fas fa-briefcase'></i> Kompetensi
+                    </div>
+                    <div class='insight-text'>
+                        ✓ Software Engineer / Developer<br>
+                        ✓ Solutions Architect<br>
+                        ✓ DevOps Engineer<br>
+                        ✓ IT Security Specialist<br>
+                        ✓ System Administrator<br>
+                        ✓ Technical Lead<br>
+                        ✓ IT Consultant
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        with col_profile2:
+            st.markdown(
+                """
+                <div class='insight-box'>
+                    <div class='insight-title'>
+                        <i class='fas fa-industry'></i> Karir Potensial
+                    </div>
+                    <div class='insight-text'>
+                        • Software House / IT Consultant<br>
+                        • Tech Startup (Co-founder/Developer)<br>
+                        • Enterprise IT Department<br>
+                        • Fintech & Banking Technology<br>
+                        • E-commerce Platform<br>
+                        • Cloud Service Provider<br>
+                        • Government IT Department
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    # ===== TAB DELTA LAB =====
+    with lab_delta:
+        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+        
+        # Header dengan Logo dari path file
+        col_logo_delta, col_info_delta = st.columns([1, 2.5], gap="large")
+        
+        with col_logo_delta:
+            # PENEMATAN LOGO DARI PATH FILE
+            logo_delta_path = "logo_delta.png"  # ← GANTI DENGAN PATH LOGO ANDA
+            
+            try:
+                st.image(
+                    logo_delta_path,
+                    use_container_width=True  # ← GUNAKAN INI
+                )
+            except FileNotFoundError:
+                # Fallback jika file tidak ditemukan
+                st.markdown(
+                    """
+                    <div style='
+                        width: 150px;
+                        height: 150px;
+                        background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%);
+                        border-radius: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 60px;
+                        color: white;
+                        box-shadow: 0 8px 16px rgba(107, 114, 128, 0.2);
+                    '>
+                        <i class='fas fa-database'></i>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                st.caption("Logo DELTA Lab (Default)")
+        
+        with col_info_delta:
+            st.markdown(
+                """
+                <div style='font-size: 28px; font-weight: 700; color: #6B7280; margin-bottom: 8px;'>
+                    DELTA Lab
+                </div>
+                <div style='font-size: 16px; color: #6B7280; margin-bottom: 16px; line-height: 1.6;'>
+                    <strong>Data Exploration, Learning & Translational Analytics Laboratory</strong>
+                </div>
+                <div style='font-size: 13px; color: #4B5563; line-height: 1.8;'>
+                    Lab DELTA adalah laboratorium yang berfokus pada eksplorasi data, machine learning, 
+                    dan analitik bisnis. Mahasiswa di lab ini akan mengembangkan keahlian dalam data science, 
+                    statistical analysis, dan business intelligence untuk menghasilkan insights yang actionable.
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        
+        # ===== VISI DAN MISI DELTA =====
+        col_vm1, col_vm2 = st.columns(2, gap="large")
+        
+        with col_vm1:
+            st.markdown(
+                """
+                <div class='insight-box'>
+                    <div class='insight-title'>
+                        <i class='fas fa-eye'></i> Visi
+                    </div>
+                    <div class='insight-text'>
+                        Menjadi pusat keunggulan dalam data science dan analytics yang mengubah 
+                        data menjadi strategic insights untuk mendorong keputusan bisnis yang lebih baik 
+                        di era digital.
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        with col_vm2:
+            st.markdown(
+                """
+                <div class='insight-box'>
+                    <div class='insight-title'>
+                        <i class='fas fa-bullseye'></i> Misi
+                    </div>
+                    <div class='insight-text'>
+                        • Mengembangkan talenta dalam data science dan advanced analytics<br>
+                        • Menciptakan solusi analytics yang memberikan business value<br>
+                        • Mendorong inovasi dalam machine learning dan AI applications<br>
+                        • Membangun kolaborasi dengan industri untuk data-driven solutions
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        
+        # ===== BIDANG KEAHLIAN DELTA =====
+        st.markdown(
+            """
+            <div style='font-size: 16px; font-weight: 700; color: #6B7280; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <i class='fas fa-star'></i> Bidang Keahlian
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        col_exp1, col_exp2, col_exp3 = st.columns(3, gap="large")
+        
+        with col_exp1:
+            st.markdown(
+                """
+                <div style='
+                    background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(107, 114, 128, 0.05) 100%);
+                    border-left: 4px solid #6B7280;
+                    border-radius: 8px;
+                    padding: 16px;
+                    height: 100%;
+                '>
+                    <div style='font-size: 14px; font-weight: 700; color: #6B7280; margin-bottom: 12px;'>
+                        <i class='fas fa-chart-bar' style='margin-right: 8px;'></i>Data Analytics
+                    </div>
+                    <ul style='font-size: 13px; color: #4B5563; line-height: 1.8; margin: 0; padding-left: 20px;'>
+                        <li>Descriptive Analytics</li>
+                        <li>Exploratory Data Analysis</li>
+                        <li>Business Intelligence</li>
+                        <li>Data Visualization</li>
+                        <li>Statistical Analysis</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        with col_exp2:
+            st.markdown(
+                """
+                <div style='
+                    background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(107, 114, 128, 0.05) 100%);
+                    border-left: 4px solid #6B7280;
+                    border-radius: 8px;
+                    padding: 16px;
+                    height: 100%;
+                '>
+                    <div style='font-size: 14px; font-weight: 700; color: #6B7280; margin-bottom: 12px;'>
+                        <i class='fas fa-brain' style='margin-right: 8px;'></i>Machine Learning
+                    </div>
+                    <ul style='font-size: 13px; color: #4B5563; line-height: 1.8; margin: 0; padding-left: 20px;'>
+                        <li>Supervised Learning</li>
+                        <li>Unsupervised Learning</li>
+                        <li>Deep Learning & NLP</li>
+                        <li>Computer Vision</li>
+                        <li>Model Deployment</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        with col_exp3:
+            st.markdown(
+                """
+                <div style='
+                    background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(107, 114, 128, 0.05) 100%);
+                    border-left: 4px solid #6B7280;
+                    border-radius: 8px;
+                    padding: 16px;
+                    height: 100%;
+                '>
+                    <div style='font-size: 14px; font-weight: 700; color: #6B7280; margin-bottom: 12px;'>
+                        <i class='fas fa-database' style='margin-right: 8px;'></i>Big Data & Engineering
+                    </div>
+                    <ul style='font-size: 13px; color: #4B5563; line-height: 1.8; margin: 0; padding-left: 20px;'>
+                        <li>Big Data Processing</li>
+                        <li>Data Engineering</li>
+                        <li>ETL & Data Pipeline</li>
+                        <li>Data Warehousing</li>
+                        <li>Stream Processing</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        
+        # ===== TEKNOLOGI YANG DIGUNAKAN DELTA =====
+        st.markdown(
+            """
+            <div style='font-size: 16px; font-weight: 700; color: #6B7280; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <i class='fas fa-toolbox'></i> Tech Stack & Tools
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        tech_delta = {
+            "Programming": ["Python", "R", "SQL", "Scala", "Julia"],
+            "ML/DL": ["TensorFlow", "PyTorch", "Scikit-learn", "XGBoost", "Keras"],
+            "Big Data": ["Hadoop", "Spark", "Kafka", "Hive", "Pig"],
+            "Visualization": ["Tableau", "Power BI", "Plotly", "Seaborn", "Matplotlib"],
+            "Database": ["PostgreSQL", "MongoDB", "Cassandra", "Elasticsearch"],
+            "Tools": ["Jupyter", "RStudio", "Git", "Docker", "Apache Airflow"]
+        }
+        
+        cols_tech = st.columns(3, gap="large")
+        for idx, (category, tools) in enumerate(tech_delta.items()):
+            with cols_tech[idx % 3]:
+                st.markdown(
+                    f"""
+                    <div style='background: white; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px;'>
+                        <div style='font-size: 13px; font-weight: 700; color: #6B7280; margin-bottom: 12px;'>
+                            {category}
+                        </div>
+                        <div style='display: flex; flex-wrap: wrap; gap: 8px;'>
+                            {''.join([f'<span style="background: #6B7280; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">{tool}</span>' for tool in tools])}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        
+        # ===== FOKUS PENELITIAN DAN PROYEK DELTA =====
+        st.markdown(
+            """
+            <div style='font-size: 16px; font-weight: 700; color: #6B7280; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <i class='fas fa-flask'></i> Fokus Penelitian & Proyek
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        research_delta = [
+            {
+                "title": "Predictive Analytics for Business",
+                "desc": "Mengembangkan model prediktif untuk forecasting, customer churn, dan demand planning"
+            },
+            {
+                "title": "Natural Language Processing & Sentiment Analysis",
+                "desc": "Analisis text data dari media sosial dan customer feedback untuk business insights"
+            },
+            {
+                "title": "Recommender Systems",
+                "desc": "Sistem rekomendasi personalized untuk e-commerce, streaming, dan marketplace"
+            },
+            {
+                "title": "Time Series Forecasting",
+                "desc": "Prediksi trend temporal untuk stock market, weather, traffic, dan IoT data"
+            }
+        ]
+        
+        for item in research_delta:
+            st.markdown(
+                f"""
+                <div style='
+                    background: white;
+                    border: 1px solid #E5E7EB;
+                    border-left: 4px solid #6B7280;
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 12px;
+                '>
+                    <div style='font-size: 14px; font-weight: 700; color: #6B7280; margin-bottom: 8px;'>
+                        ▸ {item['title']}
+                    </div>
+                    <div style='font-size: 13px; color: #6B7280; line-height: 1.6;'>
+                        {item['desc']}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        
+        # ===== PROFIL LULUSAN DELTA =====
+        st.markdown(
+            """
+            <div style='font-size: 16px; font-weight: 700; color: #6B7280; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;'>
+                <i class='fas fa-graduation-cap'></i> Profil Lulusan DELTA
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        col_profile1, col_profile2 = st.columns(2, gap="large")
+        
+        with col_profile1:
+            st.markdown(
+                """
+                <div class='insight-box'>
+                    <div class='insight-title'>
+                        <i class='fas fa-briefcase'></i> Kompetensi
+                    </div>
+                    <div class='insight-text'>
+                        ✓ Data Scientist<br>
+                        ✓ Machine Learning Engineer<br>
+                        ✓ Data Analyst<br>
+                        ✓ Business Intelligence Specialist<br>
+                        ✓ Data Engineer<br>
+                        ✓ Analytics Engineer<br>
+                        ✓ AI/ML Consultant
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        with col_profile2:
+            st.markdown(
+                """
+                <div class='insight-box'>
+                    <div class='insight-title'>
+                        <i class='fas fa-industry'></i> Karir Potensial
+                    </div>
+                    <div class='insight-text'>
+                        • Tech Companies (Google, Meta, Microsoft, etc)<br>
+                        • Financial & Banking Analytics<br>
+                        • E-commerce & Marketplace<br>
+                        • Healthcare & Biotech Analytics<br>
+                        • Government & Public Policy<br>
+                        • Consulting Firm<br>
+                        • Data-driven Startup
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
 
 # =============================================================================
 # BAGIAN 22: TAB REKOMENDASI
