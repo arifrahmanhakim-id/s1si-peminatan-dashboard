@@ -1017,34 +1017,38 @@ st.markdown(
     }}
 
     /* ===== HEADER STYLING ===== */
-    .header-container {{
-        padding: 28px 0;
-        border-bottom: 2px solid {COLORS['maroon']};
-        margin-bottom: 28px;
-        background: linear-gradient(135deg, rgba(107, 15, 26, 0.03) 0%, rgba(107, 15, 26, 0.01) 100%);
-    }}
+    
+    .header-container {{  
+        padding: 28px 50px;  /* 50px lebih seimbang */  
+        border-bottom: 2px solid {COLORS['maroon']};  
+        margin-bottom: 28px;  
+        background: linear-gradient(135deg, rgba(107, 15, 26, 0.03) 0%, rgba(107, 15, 26, 0.01) 100%);  
+        margin-left: 0;  
+        margin-right: 0;  
+    }}  
 
-    .header-title {{
-        font-size: 32px;
-        font-weight: 700;
-        color: {COLORS['maroon']};
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }}
+    .header-title {{  
+        font-size: 32px;  
+        font-weight: 700;  
+        color: {COLORS['maroon']};  
+        margin: 0 0 8px 0;  /* ← Tambah margin bawah */  
+        display: flex;  
+        align-items: center;  
+        gap: 16px;  
+    }} 
 
     .header-title i {{
         font-size: 36px;
         color: {COLORS['maroon']};
     }}
 
-    .header-subtitle {{
-        font-size: 14px;
-        color: {COLORS['text_muted']};
-        margin: 12px 0 0 52px;
-        line-height: 1.6;
-    }}
+    .header-subtitle {{  
+        font-size: 14px;  
+        color: {COLORS['text_muted']};  
+        margin: 0 0 0 50 px;  /* ← Ubah ke 0 0 0 52px agar konsisten */  
+        line-height: 1.6;  
+        padding-left: 0;  
+    }}  
 
     /* ===== KPI CARD STYLING ===== */
     .kpi-card {{
@@ -1697,7 +1701,6 @@ st.markdown(
     """
     <div class='header-container'>
         <div class='header-title'>
-            <i class='fas fa-chart-bar'></i>
             Dashboard Peminatan Laboratorium
         </div>
         <div class='header-subtitle'>
