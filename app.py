@@ -119,6 +119,19 @@ def get_angkatan_info(df):
     return None
 
 
+def safe_export_image(fig, format="png", width=700, height=500, scale=2):
+    """Export dengan error handling"""
+    try:
+        img_bytes = fig.to_image(format=format, width=width, height=height, scale=scale)
+        return BytesIO(img_bytes) if img_bytes else None
+    except ImportError:
+        st.warning("⚠️ Kaleido belum terinstall. Chart akan ditampilkan dalam mode interaktif.")
+        return None
+    except Exception as e:
+        st.warning(f"⚠️ Gagal export chart: {str(e)[:80]}")
+        return None
+
+
 # =========================
 # PERBAIKAN: AUTO INSTALL KALEIDO & CHROME
 # =========================
@@ -164,11 +177,56 @@ ensure_kaleido_and_chrome()
 
 
 # =========================
-# PERBAIKAN FUNGSI GENERATE PDF REPORT
+# HELPER FUNCTION - SAFE IMAGE EXPORT
 # =========================
+def safe_export_image(fig, format="png", width=700, height=500, scale=2):
+    """
+    Export Plotly figure ke image dengan error handling lengkap.
+    Jika gagal, return None dan gunakan fallback tabel.
+    
+    Args:
+        fig: Plotly figure object
+        format: Format image (png, jpg, svg)
+        width: Width image dalam pixel
+        height: Height image dalam pixel
+        scale: Scale factor untuk quality
+        
+    Returns:
+        BytesIO object jika berhasil, None jika gagal
+    """
+    try:
+        # Cek apakah kaleido tersedia
+        try:
+            import kaleido
+        except ImportError:
+            st.warning("⚠️ Kaleido tidak terinstall. Menggunakan fallback tabel untuk chart.")
+            return None
+        
+        # Export image
+        img_bytes = fig.to_image(format=format, width=width, height=height, scale=scale)
+        
+        if img_bytes:
+            img_buffer = BytesIO(img_bytes)
+            img_buffer.seek(0)
+            return img_buffer
+        else:
+            return None
+            
+    except ImportError as e:
+        st.warning(f"⚠️ Library tidak tersedia: {str(e)[:80]}")
+        return None
+    except Exception as e:
+        st.warning(f"⚠️ Gagal export chart ke image: {str(e)[:80]}")
+        return None
 
+
+# =========================
+# GENERATE PDF REPORT - REWRITE LENGKAP
+# =========================
 def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, delta_students, total, angkatan_info=None):
-    """Generate professional PDF report dengan chart yang diperbaiki"""
+    """
+    Generate professional PDF report dengan fallback untuk semua chart.
+    """
     
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.75*inch, bottomMargin=0.75*inch)
@@ -217,7 +275,7 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
         leading=12
     )
     
-    # ===== JUDUL HALAMAN DENGAN ANGKATAN =====
+    # ===== JUDUL HALAMAN =====
     story.append(Paragraph("LAPORAN KOMPREHENSIF", title_style))
     story.append(Paragraph("Prediksi Penempatan Laboratorium", title_style))
     story.append(Spacer(1, 0.2*inch))
@@ -258,10 +316,10 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     # ===== RINGKASAN STATISTIK =====
     story.append(Paragraph("1. RINGKASAN STATISTIK KESELURUHAN", heading_style))
     
-    sage_pct = len(sage_students) / total * 100
-    delta_pct = len(delta_students) / total * 100
-    sage_avg_conf = sage_students["Confidence"].mean()
-    delta_avg_conf = delta_students["Confidence"].mean()
+    sage_pct = len(sage_students) / total * 100 if total > 0 else 0
+    delta_pct = len(delta_students) / total * 100 if total > 0 else 0
+    sage_avg_conf = sage_students["Confidence"].mean() if len(sage_students) > 0 else 0
+    delta_avg_conf = delta_students["Confidence"].mean() if len(delta_students) > 0 else 0
     
     summary_data = [
         ['Metrik', 'Nilai', 'Persentase'],
@@ -319,11 +377,11 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     # ===== PAGE BREAK =====
     story.append(PageBreak())
     
-    # ===== PIE CHART (PERBAIKAN: CHART DALAM PDF) =====
+    # ===== PIE CHART / DONUT CHART DENGAN FALLBACK =====
     story.append(Paragraph("2. VISUALISASI DISTRIBUSI LABORATORIUM", heading_style))
     
     try:
-        # ✅ PERBAIKAN: Pie chart dengan error handling yang lebih baik
+        # Buat pie chart
         fig_pie = go.Figure(data=[go.Pie(
             labels=[
                 f'<b>Lab SAGE</b><br>Software Development<br>({len(sage_students)} mahasiswa)',
@@ -361,48 +419,48 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
             plot_bgcolor='white'
         )
         
-        # ✅ PERBAIKAN: Gunakan try-except untuk export image
-        try:
-            img_bytes = fig_pie.to_image(format="png", width=700, height=500, scale=2)
-            pie_img_buffer = BytesIO(img_bytes)
-            pie_img_buffer.seek(0)
-            
-            # ✅ Pastikan dimensi sesuai dengan page width
+        # ✅ GUNAKAN SAFE EXPORT FUNCTION
+        pie_img_buffer = safe_export_image(fig_pie, width=700, height=500)
+        
+        if pie_img_buffer:
             story.append(Image(pie_img_buffer, width=5.5*inch, height=4*inch))
             story.append(Spacer(1, 0.15*inch))
-        except Exception as e_img:
-            # Fallback: Tampilkan chart sebagai tabel jika image export gagal
-            st.warning(f"⚠️ Gagal export chart ke image: {str(e_img)}")
-            fallback_data = [
+        else:
+            # FALLBACK: Tabel jika chart gagal
+            fallback_pie_data = [
                 ['Laboratorium', 'Jumlah', 'Persentase'],
                 ['Lab SAGE', str(len(sage_students)), f'{sage_pct:.1f}%'],
                 ['Lab DELTA', str(len(delta_students)), f'{delta_pct:.1f}%']
             ]
-            fallback_table = Table(fallback_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
-            fallback_table.setStyle(TableStyle([
+            fallback_pie_table = Table(fallback_pie_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
+            fallback_pie_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('FONTSIZE', (0, 1), (-1, -1), 10),
                 ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#6B0F1A')),
                 ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F3F4F6')]),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 1), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 10),
+                ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
             ]))
-            story.append(fallback_table)
+            story.append(fallback_pie_table)
             story.append(Spacer(1, 0.15*inch))
         
     except Exception as e:
-        # ✅ PERBAIKAN: Tampilkan pesan error yang informatif
-        error_text = f"⚠️ Visualisasi pie chart tidak tersedia. Error: {str(e)[:50]}"
-        story.append(Paragraph(error_text, normal_style))
-        
-        # Fallback: Tampilkan data dalam tabel
-        fallback_data = [
+        # FALLBACK DEFAULT: Tabel jika error
+        st.warning(f"⚠️ Gagal generate pie chart: {str(e)[:80]}")
+        fallback_pie_data = [
             ['Laboratorium', 'Jumlah', 'Persentase'],
             ['Lab SAGE', str(len(sage_students)), f'{sage_pct:.1f}%'],
             ['Lab DELTA', str(len(delta_students)), f'{delta_pct:.1f}%']
         ]
-        fallback_table = Table(fallback_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
-        fallback_table.setStyle(TableStyle([
+        fallback_pie_table = Table(fallback_pie_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
+        fallback_pie_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -410,7 +468,7 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
             ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#6B0F1A')),
             ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F3F4F6')]),
         ]))
-        story.append(fallback_table)
+        story.append(fallback_pie_table)
         story.append(Spacer(1, 0.15*inch))
     
     # ===== NARASI PIE CHART =====
@@ -497,7 +555,7 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     # ===== PAGE BREAK SEBELUM DETAIL =====
     story.append(PageBreak())
     
-    # ===== DETAIL PREDIKSI (SEMUA MAHASISWA DENGAN REPEAT HEADER) =====
+    # ===== DETAIL PREDIKSI (DENGAN SPLIT PAGES) =====
     story.append(Paragraph("4. DETAIL PREDIKSI SEMUA MAHASISWA", heading_style))
     
     narasi_detail = f"""
@@ -556,7 +614,6 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
             ('ALIGN', (1, 1), (1, -1), 'LEFT'),
             ('LEFTPADDING', (0, 0), (-1, -1), 4),
             ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-            ('REPEAT', (0, 0), (-1, 0), True),
         ]))
         
         story.append(detail_pred_table)
@@ -565,7 +622,7 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     # ===== PAGE BREAK SEBELUM FEATURE IMPORTANCE =====
     story.append(PageBreak())
     
-    # ===== FEATURE IMPORTANCE =====
+    # ===== FEATURE IMPORTANCE BAR CHART DENGAN FALLBACK =====
     story.append(Paragraph("5. ANALISIS FAKTOR PALING BERPENGARUH", heading_style))
     
     narasi_fi = """
@@ -615,27 +672,53 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
                 paper_bgcolor="rgba(255, 255, 255, 1)",
             )
             
-            try:
-                img_bytes = fig_fi.to_image(format="png", width=900, height=400, scale=2)
-                fi_img_buffer = BytesIO(img_bytes)
-                fi_img_buffer.seek(0)
-                
+            # ✅ GUNAKAN SAFE EXPORT FUNCTION
+            fi_img_buffer = safe_export_image(fig_fi, width=900, height=400)
+            
+            if fi_img_buffer:
                 story.append(Image(fi_img_buffer, width=5.5*inch, height=3*inch))
                 story.append(Spacer(1, 0.2*inch))
-            except Exception as e_img:
-                story.append(Paragraph(f"⚠️ Visualisasi feature importance tidak tersedia", normal_style))
+            else:
+                # FALLBACK: Tabel Feature Importance jika chart gagal
+                fallback_fi_data = [['Feature', 'Importance Score']]
+                for _, row in fi_df.iterrows():
+                    fallback_fi_data.append([
+                        str(row['Feature'])[:35],
+                        f"{row['Importance']:.4f}"
+                    ])
+                
+                fallback_fi_table = Table(fallback_fi_data, colWidths=[3*inch, 1.5*inch])
+                fallback_fi_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 9),
+                    ('FONTSIZE', (0, 1), (-1, -1), 9),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#6B0F1A')),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F3F4F6')]),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('TOPPADDING', (0, 1), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                ]))
+                story.append(fallback_fi_table)
+                story.append(Spacer(1, 0.2*inch))
         else:
             story.append(Paragraph("⚠️ Model tidak memiliki informasi feature importance", normal_style))
     
     except Exception as e:
-        story.append(Paragraph(f"⚠️ Gagal membuat feature importance chart", normal_style))
+        st.warning(f"⚠️ Error feature importance: {str(e)[:80]}")
+        story.append(Paragraph("⚠️ Gagal membuat feature importance chart", normal_style))
     
     story.append(Spacer(1, 0.2*inch))
     
     # ===== PAGE BREAK SEBELUM CONFIDENCE HISTOGRAM =====
     story.append(PageBreak())
     
-    # ===== CONFIDENCE HISTOGRAM =====
+    # ===== CONFIDENCE HISTOGRAM DENGAN FALLBACK =====
     story.append(Paragraph("6. DISTRIBUSI CONFIDENCE LEVEL", heading_style))
     
     narasi_hist = """
@@ -682,18 +765,61 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
             legend=dict(x=0.7, y=1.0, font=dict(size=10))
         )
         
-        try:
-            img_bytes = fig_hist.to_image(format="png", width=850, height=400, scale=2)
-            hist_img_buffer = BytesIO(img_bytes)
-            hist_img_buffer.seek(0)
-            
+        # ✅ GUNAKAN SAFE EXPORT FUNCTION
+        hist_img_buffer = safe_export_image(fig_hist, width=850, height=400)
+        
+        if hist_img_buffer:
             story.append(Image(hist_img_buffer, width=5.5*inch, height=3*inch))
             story.append(Spacer(1, 0.2*inch))
-        except Exception as e_img:
-            story.append(Paragraph(f"⚠️ Visualisasi histogram tidak tersedia", normal_style))
+        else:
+            # FALLBACK: Tabel Confidence Breakdown jika chart gagal
+            conf_0_25 = len(df_out[df_out["Confidence"] < 25])
+            conf_25_50 = len(df_out[(df_out["Confidence"] >= 25) & (df_out["Confidence"] < 50)])
+            conf_50_75 = len(df_out[(df_out["Confidence"] >= 50) & (df_out["Confidence"] < 75)])
+            conf_75_100 = len(df_out[df_out["Confidence"] >= 75])
+            
+            fallback_hist_data = [
+                ['Range Confidence', 'SAGE', 'DELTA', 'Total', 'Persentase'],
+                ['0-25%', str(len(sage_students[sage_students["Confidence"] < 25])), 
+                 str(len(delta_students[delta_students["Confidence"] < 25])), str(conf_0_25), 
+                 f'{conf_0_25/total*100:.1f}%'],
+                ['25-50%', str(len(sage_students[(sage_students["Confidence"] >= 25) & (sage_students["Confidence"] < 50)])), 
+                 str(len(delta_students[(delta_students["Confidence"] >= 25) & (delta_students["Confidence"] < 50)])), 
+                 str(conf_25_50), f'{conf_25_50/total*100:.1f}%'],
+                ['50-75%', str(len(sage_students[(sage_students["Confidence"] >= 50) & (sage_students["Confidence"] < 75)])), 
+                 str(len(delta_students[(delta_students["Confidence"] >= 50) & (delta_students["Confidence"] < 75)])), 
+                 str(conf_50_75), f'{conf_50_75/total*100:.1f}%'],
+                ['75-100%', str(len(sage_students[sage_students["Confidence"] >= 75])), 
+                 str(len(delta_students[delta_students["Confidence"] >= 75])), str(conf_75_100), 
+                 f'{conf_75_100/total*100:.1f}%']
+            ]
+            
+            fallback_hist_table = Table(fallback_hist_data, colWidths=[1.2*inch, 1*inch, 1*inch, 0.9*inch, 1*inch])
+            fallback_hist_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#6B0F1A')),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F3F4F6')]),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 1), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ]))
+            story.append(fallback_hist_table)
+            story.append(Spacer(1, 0.2*inch))
     
     except Exception as e:
-        story.append(Paragraph(f"⚠️ Gagal membuat histogram", normal_style))
+        st.warning(f"⚠️ Error histogram: {str(e)[:80]}")
+        # FALLBACK DEFAULT: Simple statistics
+        story.append(Paragraph("<b>Confidence Level Breakdown:</b><br/>", small_style))
+        conf_stats = f"Confidence rata-rata keseluruhan: {overall_avg_conf:.2f}%"
+        story.append(Paragraph(conf_stats, small_style))
+        story.append(Spacer(1, 0.2*inch))
     
     story.append(Spacer(1, 0.2*inch))
     
@@ -767,6 +893,7 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     
     buffer.seek(0)
     return buffer
+
 # =========================
 # 1. CONSTANTS & COLUMNS
 # =========================
