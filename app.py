@@ -58,6 +58,13 @@ from reportlab.platypus import (
     Image
 )
 
+
+# =========================  
+# IMPORT TAMBAHAN  
+# =========================  
+import subprocess  
+import sys  
+
 # ============================================================================
 # KONFIGURASI STREAMLIT
 # ============================================================================
@@ -113,11 +120,32 @@ def get_angkatan_info(df):
 
 
 # =========================
-# FUNGSI GENERATE PDF REPORT
+# FUNGSI HELPER: INSTALL KALEIDO OTOMATIS
+# =========================
+def ensure_kaleido_installed():
+    """Pastikan Kaleido terinstall untuk export image"""
+    try:
+        import kaleido
+        return True
+    except ImportError:
+        st.warning("⚠️ Menginstall Kaleido untuk export chart ke PDF...")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "kaleido", "-q"])
+            st.success("✓ Kaleido berhasil diinstall!")
+            return True
+        except Exception as e:
+            st.error(f"❌ Gagal install Kaleido: {e}")
+            return False
+
+# Jalankan saat startup
+ensure_kaleido_installed()
+
+# =========================
+# PERBAIKAN FUNGSI GENERATE PDF REPORT
 # =========================
 
 def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, delta_students, total, angkatan_info=None):
-    """Generate professional PDF report dengan semua perbaikan"""
+    """Generate professional PDF report dengan chart yang diperbaiki"""
     
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.75*inch, bottomMargin=0.75*inch)
@@ -268,52 +296,99 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     # ===== PAGE BREAK =====
     story.append(PageBreak())
     
-    # ===== PIE CHART (PROPORSIONAL DENGAN LEGEND) =====
+    # ===== PIE CHART (PERBAIKAN: CHART DALAM PDF) =====
     story.append(Paragraph("2. VISUALISASI DISTRIBUSI LABORATORIUM", heading_style))
     
     try:
-        # ✅ PERBAIKAN: Pie chart proporsional dengan legend yang jelas
+        # ✅ PERBAIKAN: Pie chart dengan error handling yang lebih baik
         fig_pie = go.Figure(data=[go.Pie(
-            labels=['Lab SAGE<br>(Software Development)', 'Lab DELTA<br>(Data Analytics)'],
+            labels=[
+                f'<b>Lab SAGE</b><br>Software Development<br>({len(sage_students)} mahasiswa)',
+                f'<b>Lab DELTA</b><br>Data Analytics<br>({len(delta_students)} mahasiswa)'
+            ],
             values=[len(sage_students), len(delta_students)],
             marker=dict(
                 colors=['#6B0F1A', '#6B7280'],
                 line=dict(color='white', width=2)
             ),
-            textinfo='label+percent+value',
-            textfont=dict(size=11, color='white'),
+            textinfo='percent+value',
+            textfont=dict(size=12, color='white'),
             textposition='inside',
             hovertemplate='<b>%{label}</b><br>Jumlah: %{value} mahasiswa<br>Persentase: %{percent}<extra></extra>',
-            pull=[0.05, 0.05]  # Slight separation untuk clarity
+            pull=[0.05, 0.05]
         )])
         
         fig_pie.update_layout(
-            height=600,  # ✅ Tinggi diperbesar
-            width=800,
-            margin=dict(l=80, r=200, t=50, b=50),  # ✅ Right margin untuk legend
-            font=dict(size=12, family="Arial"),
+            height=500,
+            width=700,
+            margin=dict(l=50, r=50, t=50, b=50),
+            font=dict(size=11, family="Arial"),
             showlegend=True,
             legend=dict(
-                x=1.05,  # ✅ Legend di samping
-                y=1,
+                x=0.02,
+                y=0.98,
                 xanchor='left',
                 yanchor='top',
-                bgcolor='rgba(255, 255, 255, 0.8)',
+                bgcolor='rgba(255, 255, 255, 0.9)',
                 bordercolor='#6B0F1A',
                 borderwidth=1,
-                font=dict(size=11)
+                font=dict(size=10)
             ),
+            paper_bgcolor='white',
+            plot_bgcolor='white'
         )
         
-        img_bytes = fig_pie.to_image(format="png", width=900, height=600)
-        pie_img_buffer = BytesIO(img_bytes)
-        pie_img_buffer.seek(0)
-        
-        story.append(Image(pie_img_buffer, width=6*inch, height=3.5*inch))
-        story.append(Spacer(1, 0.2*inch))
+        # ✅ PERBAIKAN: Gunakan try-except untuk export image
+        try:
+            img_bytes = fig_pie.to_image(format="png", width=700, height=500, scale=2)
+            pie_img_buffer = BytesIO(img_bytes)
+            pie_img_buffer.seek(0)
+            
+            # ✅ Pastikan dimensi sesuai dengan page width
+            story.append(Image(pie_img_buffer, width=5.5*inch, height=4*inch))
+            story.append(Spacer(1, 0.15*inch))
+        except Exception as e_img:
+            # Fallback: Tampilkan chart sebagai tabel jika image export gagal
+            st.warning(f"⚠️ Gagal export chart ke image: {str(e_img)}")
+            fallback_data = [
+                ['Laboratorium', 'Jumlah', 'Persentase'],
+                ['Lab SAGE', str(len(sage_students)), f'{sage_pct:.1f}%'],
+                ['Lab DELTA', str(len(delta_students)), f'{delta_pct:.1f}%']
+            ]
+            fallback_table = Table(fallback_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
+            fallback_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#6B0F1A')),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F3F4F6')]),
+            ]))
+            story.append(fallback_table)
+            story.append(Spacer(1, 0.15*inch))
         
     except Exception as e:
-        story.append(Paragraph(f"⚠️ Gagal membuat pie chart: {str(e)}", normal_style))
+        # ✅ PERBAIKAN: Tampilkan pesan error yang informatif
+        error_text = f"⚠️ Visualisasi pie chart tidak tersedia. Error: {str(e)[:50]}"
+        story.append(Paragraph(error_text, normal_style))
+        
+        # Fallback: Tampilkan data dalam tabel
+        fallback_data = [
+            ['Laboratorium', 'Jumlah', 'Persentase'],
+            ['Lab SAGE', str(len(sage_students)), f'{sage_pct:.1f}%'],
+            ['Lab DELTA', str(len(delta_students)), f'{delta_pct:.1f}%']
+        ]
+        fallback_table = Table(fallback_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
+        fallback_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#6B0F1A')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F3F4F6')]),
+        ]))
+        story.append(fallback_table)
+        story.append(Spacer(1, 0.15*inch))
     
     # ===== NARASI PIE CHART =====
     narasi_pie = f"""
@@ -337,7 +412,6 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     medium_conf_count = len(df_out[(df_out["Confidence"] >= 60) & (df_out["Confidence"] < 80)])
     low_conf_count = len(df_out[df_out["Confidence"] < 60])
     
-    # ✅ PERBAIKAN: Kolom deskripsi lebih lebar
     quality_data = [
         ['Kategori', 'Jumlah', '%', 'Deskripsi Kualitas & Tindakan'],
         ['Tinggi (≥80%)', str(high_conf_count), f'{high_conf_count/total*100:.1f}%', 
@@ -348,12 +422,12 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
          'Model kurang yakin. Perlu assessment mendalam, wawancara tatap muka, dan konsultasi intensif dengan pembimbing.']
     ]
     
-    quality_table = Table(quality_data, colWidths=[1.2*inch, 0.9*inch, 0.8*inch, 3*inch])  # ✅ Deskripsi lebih lebar
+    quality_table = Table(quality_data, colWidths=[1.2*inch, 0.9*inch, 0.8*inch, 3*inch])
     quality_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (2, -1), 'CENTER'),
-        ('ALIGN', (3, 0), (3, -1), 'LEFT'),  # ✅ Deskripsi align left
+        ('ALIGN', (3, 0), (3, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
@@ -361,12 +435,12 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
         ('TOPPADDING', (0, 0), (-1, 0), 10),
         ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#6B0F1A')),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F3F4F6')]),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # ✅ Top align untuk multiline
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('TOPPADDING', (0, 1), (-1, -1), 12),
         ('BOTTOMPADDING', (0, 1), (-1, -1), 12),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('WORDWRAP', (3, 1), (3, -1), True),  # ✅ Word wrap untuk deskripsi
+        ('WORDWRAP', (3, 1), (3, -1), True),
     ]))
     
     story.append(quality_table)
@@ -403,7 +477,6 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     # ===== DETAIL PREDIKSI (SEMUA MAHASISWA DENGAN REPEAT HEADER) =====
     story.append(Paragraph("4. DETAIL PREDIKSI SEMUA MAHASISWA", heading_style))
     
-    # ✅ NARASI DETAIL PREDIKSI
     narasi_detail = f"""
     <b>Penjelasan Tabel Detail Prediksi:</b><br/>
     Tabel berikut menampilkan hasil prediksi lengkap untuk semua <b>{len(detail_table)} mahasiswa</b> yang dianalisis. 
@@ -415,27 +488,23 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     story.append(Spacer(1, 0.15*inch))
     
     # ===== SPLIT TABEL DETAIL MENJADI MULTIPLE PAGES DENGAN REPEAT HEADER =====
-    rows_per_page = 25  # Jumlah baris per halaman
+    rows_per_page = 25
     total_rows = len(detail_table)
     
     for page_num in range(0, total_rows, rows_per_page):
         if page_num > 0:
             story.append(PageBreak())
-            # ✅ REPEAT HEADING SETELAH PAGE BREAK
             story.append(Paragraph(f"4. DETAIL PREDIKSI SEMUA MAHASISWA (Lanjutan - Halaman {page_num // rows_per_page + 1})", heading_style))
             story.append(Spacer(1, 0.1*inch))
         
-        # Ambil slice tabel untuk halaman ini
         start_idx = page_num
         end_idx = min(page_num + rows_per_page, total_rows)
         detail_sample = detail_table.iloc[start_idx:end_idx].copy()
         
-        # Buat header tabel
         detail_data = [['No', 'Nama Mahasiswa', 'Lab', 'Confidence', 'Prob SAGE', 'Prob DELTA']]
         
-        # ✅ PERBAIKAN: Nomor mulai dari 1 untuk setiap tabel
         for idx_in_page, (_, row) in enumerate(detail_sample.iterrows(), 1):
-            actual_no = start_idx + idx_in_page  # Nomor urut sebenarnya
+            actual_no = start_idx + idx_in_page
             try:
                 detail_data.append([
                     str(actual_no),
@@ -448,7 +517,6 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
             except Exception:
                 continue
         
-        # Buat tabel dengan REPEAT HEADER
         detail_pred_table = Table(detail_data, colWidths=[0.5*inch, 2*inch, 0.8*inch, 0.9*inch, 0.9*inch, 0.9*inch])
         detail_pred_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6B0F1A')),
@@ -465,7 +533,7 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
             ('ALIGN', (1, 1), (1, -1), 'LEFT'),
             ('LEFTPADDING', (0, 0), (-1, -1), 4),
             ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-            ('REPEAT', (0, 0), (-1, 0), True),  # ✅ REPEAT HEADER
+            ('REPEAT', (0, 0), (-1, 0), True),
         ]))
         
         story.append(detail_pred_table)
@@ -477,17 +545,11 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     # ===== FEATURE IMPORTANCE =====
     story.append(Paragraph("5. ANALISIS FAKTOR PALING BERPENGARUH", heading_style))
     
-    # ===== NARASI FEATURE IMPORTANCE =====
     narasi_fi = """
     <b>Penjelasan Analisis Faktor Paling Berpengaruh:</b><br/>
     Model machine learning (Random Forest) menganalisis kontribusi relatif setiap variabel (mata kuliah dan aktivitas) 
     dalam memprediksi peminatan laboratorium. Grafik berikut menampilkan 12 faktor dengan importance score tertinggi. 
-    Semakin panjang bar, semakin besar pengaruhnya terhadap keputusan model.<br/>
-    <br/>
-    <b>Interpretasi Importance Score:</b><br/>
-    • Faktor dengan score tinggi: Diskriminatif dalam membedakan profil mahasiswa antar laboratorium<br/>
-    • Faktor dengan score rendah: Kontribusi minimal atau tidak konsisten dalam prediksi<br/>
-    • Kombinasi faktor: Model menggunakan ensemble decision untuk prediksi yang lebih akurat<br/>
+    Semakin panjang bar, semakin besar pengaruhnya terhadap keputusan model.
     """
     
     story.append(Paragraph(narasi_fi, small_style))
@@ -517,7 +579,7 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
             )
             
             fig_fi.update_layout(
-                height=500,
+                height=400,
                 margin=dict(l=280, r=100, t=40, b=60),
                 xaxis=dict(
                     title=dict(text="<b>Importance Score</b>", font=dict(size=11, color="#111827")),
@@ -526,21 +588,24 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
                 yaxis=dict(showgrid=False, zeroline=False, tickfont=dict(size=10)),
                 showlegend=False,
                 font=dict(size=11),
-                plot_bgcolor="rgba(0, 0, 0, 0)",
-                paper_bgcolor="rgba(0, 0, 0, 0)",
+                plot_bgcolor="rgba(255, 255, 255, 1)",
+                paper_bgcolor="rgba(255, 255, 255, 1)",
             )
             
-            img_bytes = fig_fi.to_image(format="png", width=950, height=500)
-            fi_img_buffer = BytesIO(img_bytes)
-            fi_img_buffer.seek(0)
-            
-            story.append(Image(fi_img_buffer, width=6.5*inch, height=3.5*inch))
-            story.append(Spacer(1, 0.2*inch))
+            try:
+                img_bytes = fig_fi.to_image(format="png", width=900, height=400, scale=2)
+                fi_img_buffer = BytesIO(img_bytes)
+                fi_img_buffer.seek(0)
+                
+                story.append(Image(fi_img_buffer, width=5.5*inch, height=3*inch))
+                story.append(Spacer(1, 0.2*inch))
+            except Exception as e_img:
+                story.append(Paragraph(f"⚠️ Visualisasi feature importance tidak tersedia", normal_style))
         else:
             story.append(Paragraph("⚠️ Model tidak memiliki informasi feature importance", normal_style))
     
     except Exception as e:
-        story.append(Paragraph(f"⚠️ Gagal membuat feature importance chart: {str(e)}", normal_style))
+        story.append(Paragraph(f"⚠️ Gagal membuat feature importance chart", normal_style))
     
     story.append(Spacer(1, 0.2*inch))
     
@@ -550,18 +615,10 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     # ===== CONFIDENCE HISTOGRAM =====
     story.append(Paragraph("6. DISTRIBUSI CONFIDENCE LEVEL", heading_style))
     
-    # ===== NARASI HISTOGRAM =====
     narasi_hist = """
     <b>Penjelasan Histogram Distribusi Confidence:</b><br/>
     Visualisasi ini menampilkan sebaran confidence level untuk kedua laboratorium secara bersamaan. 
-    Sumbu horizontal menunjukkan confidence level (0-100%), sedangkan sumbu vertikal menunjukkan jumlah mahasiswa. 
-    Pola distribusi memberikan insight tentang konsistensi dan akurasi prediksi model untuk setiap laboratorium.<br/>
-    <br/>
-    <b>Interpretasi Pola Distribusi:</b><br/>
-    • Konsentrasi di area >80%: Model memberikan prediksi yang percaya diri dan akurat<br/>
-    • Konsentrasi di area 60-80%: Model cukup yakin dengan variabilitas sedang<br/>
-    • Sebaran luas (0-100%): Keberagaman profil mahasiswa yang tinggi<br/>
-    • Overlap SAGE-DELTA: Beberapa mahasiswa memiliki profil borderline<br/>
+    Sumbu horizontal menunjukkan confidence level (0-100%), sedangkan sumbu vertikal menunjukkan jumlah mahasiswa.
     """
     
     story.append(Paragraph(narasi_hist, small_style))
@@ -591,10 +648,10 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
             xaxis_title="Confidence Level (%)",
             yaxis_title="Jumlah Mahasiswa",
             barmode="overlay",
-            height=500,
+            height=400,
             margin=dict(l=70, r=50, t=60, b=60),
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(255, 255, 255, 1)",
+            paper_bgcolor="rgba(255, 255, 255, 1)",
             font=dict(size=11),
             xaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", tickfont=dict(size=10)),
             yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB", tickfont=dict(size=10)),
@@ -602,15 +659,18 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
             legend=dict(x=0.7, y=1.0, font=dict(size=10))
         )
         
-        img_bytes = fig_hist.to_image(format="png", width=850, height=500)
-        hist_img_buffer = BytesIO(img_bytes)
-        hist_img_buffer.seek(0)
-        
-        story.append(Image(hist_img_buffer, width=5.8*inch, height=3.5*inch))
-        story.append(Spacer(1, 0.2*inch))
+        try:
+            img_bytes = fig_hist.to_image(format="png", width=850, height=400, scale=2)
+            hist_img_buffer = BytesIO(img_bytes)
+            hist_img_buffer.seek(0)
+            
+            story.append(Image(hist_img_buffer, width=5.5*inch, height=3*inch))
+            story.append(Spacer(1, 0.2*inch))
+        except Exception as e_img:
+            story.append(Paragraph(f"⚠️ Visualisasi histogram tidak tersedia", normal_style))
     
     except Exception as e:
-        story.append(Paragraph(f"⚠️ Gagal membuat histogram: {str(e)}", normal_style))
+        story.append(Paragraph(f"⚠️ Gagal membuat histogram", normal_style))
     
     story.append(Spacer(1, 0.2*inch))
     
@@ -618,7 +678,6 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     story.append(PageBreak())
     story.append(Paragraph("7. REKOMENDASI IMPLEMENTASI", heading_style))
     
-    # ===== NARASI REKOMENDASI =====
     narasi_rekomendasi = f"""
     <b>Penjelasan Strategi Implementasi Penempatan:</b><br/>
     Berdasarkan analisis hasil prediksi dan kualitas confidence level, berikut adalah strategi implementasi berjenjang 
@@ -641,14 +700,6 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     Mahasiswa dengan confidence <60% memerlukan assessment mendalam dan konsultasi intensif. 
     Pertimbangkan untuk melakukan evaluasi lebih lanjut menggunakan instrumen assessment tambahan, wawancara tatap muka, 
     atau portfolio review sebelum keputusan final dibuat.<br/>
-    <br/>
-    <b>D. Monitoring & Validation:</b><br/>
-    Pantau performa mahasiswa setelah penempatan untuk memvalidasi akurasi model dan mengidentifikasi area perbaikan. 
-    Feedback dari mahasiswa dan dosen penasehat sangat berharga untuk continuous improvement model prediksi.<br/>
-    <br/>
-    <b>E. Program Pengembangan Berkelanjutan:</b><br/>
-    Gunakan insight dari laporan ini untuk merancang program pengembangan yang lebih targeted untuk setiap laboratorium. 
-    Update model prediksi secara berkala (semester/tahun) berdasarkan data historis dan performa aktual mahasiswa yang telah ditempatkan.
     """
     
     story.append(Paragraph(recommendation_text, small_style))
@@ -658,30 +709,17 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     story.append(PageBreak())
     story.append(Paragraph("8. KESIMPULAN DAN TEMUAN UTAMA", heading_style))
     
-    # ===== NARASI KESIMPULAN =====
     narasi_kesimpulan = f"""
     <b>Ringkasan Analisis Komprehensif:</b><br/>
     Analisis prediksi laboratorium untuk <b>{total} mahasiswa</b> Program Studi Sistem Informasi menunjukkan bahwa 
-    model machine learning (Random Forest) memberikan rekomendasi dengan tingkat kepercayaan rata-rata <b>{overall_avg_conf:.2f}%</b>. 
-    Tingkat akurasi ini menunjukkan keandalan cukup baik dalam memprediksi kesesuaian mahasiswa dengan dua laboratorium utama.<br/>
+    model machine learning (Random Forest) memberikan rekomendasi dengan tingkat kepercayaan rata-rata <b>{overall_avg_conf:.2f}%</b>.<br/>
     <br/>
     <b>Temuan Distribusi:</b><br/>
-    Distribusi mahasiswa menunjukkan Lab SAGE (<b>{len(sage_students)} / {sage_pct:.1f}%</b>) dan 
-    Lab DELTA (<b>{len(delta_students)} / {delta_pct:.1f}%</b>) mencerminkan keberagaman profil akademik dan minat mahasiswa. 
-    Perbedaan distribusi ini logis mengingat fokus Lab SAGE pada software engineering dan Lab DELTA pada data science.<br/>
-    <br/>
-    <b>Kualitas Prediksi:</b><br/>
-    • <b>{high_conf_count} mahasiswa ({high_conf_count/total*100:.1f}%)</b> memiliki prediksi berkualitas tinggi (confidence ≥80%)<br/>
-    • <b>{medium_conf_count} mahasiswa ({medium_conf_count/total*100:.1f}%)</b> berkualitas sedang (confidence 60-80%)<br/>
-    • <b>{low_conf_count} mahasiswa ({low_conf_count/total*100:.1f}%)</b> berkualitas rendah (confidence <60%)<br/>
-    <br/>
-    Proporsi ini menunjukkan bahwa mayoritas mahasiswa memiliki profil yang jelas dan konsisten, 
-    namun ada kelompok kecil yang perlu assessment lebih mendalam.<br/>
+    Lab SAGE (<b>{len(sage_students)} / {sage_pct:.1f}%</b>) dan Lab DELTA (<b>{len(delta_students)} / {delta_pct:.1f}%</b>)<br/>
     <br/>
     <b>Rekomendasi Utama:</b><br/>
-    Implementasikan strategi penempatan berjenjang sesuai kualitas prediksi untuk memaksimalkan kepuasan mahasiswa, 
-    efisiensi penempatan laboratorium, dan outcome pembelajaran yang optimal. Model ini dapat digunakan sebagai alat 
-    decision support untuk membantu advisor dalam memberikan rekomendasi kepada mahasiswa.<br/>
+    Implementasikan strategi penempatan berjenjang sesuai kualitas prediksi untuk memaksimalkan kepuasan mahasiswa 
+    dan outcome pembelajaran yang optimal.
     """
     
     story.append(Paragraph(narasi_kesimpulan, small_style))
@@ -699,13 +737,13 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students, d
     )))
     
     # Build PDF
-    doc.build(story)
+    try:
+        doc.build(story)
+    except Exception as e:
+        st.error(f"Error building PDF: {str(e)}")
+    
     buffer.seek(0)
     return buffer
-
-
-
-
 # =========================
 # 1. CONSTANTS & COLUMNS
 # =========================
