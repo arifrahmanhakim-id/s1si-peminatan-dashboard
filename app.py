@@ -1850,7 +1850,7 @@ with tab_summary:
 
         st.dataframe(
             fi_df.reset_index(drop=True),
-            use_container_width=True,
+            use_container_width='stretch',
             hide_index=True,
         )
 
@@ -2014,7 +2014,7 @@ with tab_table:
         )
     )
 
-    st.plotly_chart(fig_radar, use_container_width=True)
+    st.plotly_chart(fig_radar, use_container_width='stretch')
 
     st.markdown(
         """  
@@ -2147,7 +2147,7 @@ with tab_vis:
                 plot_bgcolor="rgba(0,0,0,0)"
             )
             
-            st.plotly_chart(fig_donut, use_container_width=True)
+            st.plotly_chart(fig_donut, use_container_width='stretch')
 
         except Exception as e:
             st.error(f"❌ Error rendering donut chart: {str(e)}")
@@ -2233,7 +2233,7 @@ with tab_vis:
                 paper_bgcolor="rgba(0, 0, 0, 0)",
             )
 
-            st.plotly_chart(fig_fi, use_container_width=True)
+            st.plotly_chart(fig_fi, use_container_width='stretch')
 
             st.markdown(
                 """  
@@ -2433,7 +2433,7 @@ with tab_vis:
                     bargap=0.3
                 )
 
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, use_container_width='stretch')
 
         except Exception as e:
             st.error(f"Error saat membuat chart: {str(e)}")
@@ -2540,7 +2540,7 @@ with tab_vis:
                         paper_bgcolor="rgba(0, 0, 0, 0)",
                         hovermode="x unified"
                     )
-                    st.plotly_chart(fig_hist_sage, use_container_width=True)
+                    st.plotly_chart(fig_hist_sage, use_container_width='stretch')
                 else:
                     st.warning("⚠️ Tidak ada data Probabilitas SAGE")
             else:
@@ -2611,7 +2611,7 @@ with tab_vis:
                         paper_bgcolor="rgba(0, 0, 0, 0)",
                         hovermode="x unified"
                     )
-                    st.plotly_chart(fig_hist_delta, use_container_width=True)
+                    st.plotly_chart(fig_hist_delta, use_container_width='stretch')
                 else:
                     st.warning("⚠️ Tidak ada data Probabilitas DELTA")
             else:
@@ -2775,7 +2775,7 @@ with tab_comparative:
         yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB")
     )
     
-    st.plotly_chart(fig_scatter, use_container_width=True)
+    st.plotly_chart(fig_scatter, use_container_width='stretch')
 
     st.markdown(
         f"""
@@ -2867,7 +2867,7 @@ with tab_comparative:
         )
     )
     
-    st.plotly_chart(fig_sage, use_container_width=True)
+    st.plotly_chart(fig_sage, use_container_width='stretch')
 
     st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
 
@@ -2919,7 +2919,7 @@ with tab_comparative:
         )
     )
     
-    st.plotly_chart(fig_delta, use_container_width=True)
+    st.plotly_chart(fig_delta, use_container_width='stretch')
 
     st.markdown(
         f"""
@@ -3175,7 +3175,7 @@ with tab_report:
         yaxis=dict(showgrid=True, gridwidth=1, gridcolor="#E5E7EB")
     )
 
-    st.plotly_chart(fig_conf_dist, use_container_width=True)
+    st.plotly_chart(fig_conf_dist, use_container_width='stretch')
 
     st.markdown(
         f"""
