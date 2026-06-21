@@ -3448,14 +3448,14 @@ with tab_profile:
             <i class='fas fa-robot' style='margin-right:10px;'></i>
             COMING SOON
         </div>
-    <div style="font-size:14px;opacity:0.9;">
-        Halaman Profil Laboratorium sedang dalam tahap pengembangan.
-    </div>
     """,
     unsafe_allow_html=True
     )
 
-    st.info("🚀 Fitur ini akan tersedia pada versi berikutnya.")
+    st.info("""
+    Halaman Profil Laboratorium sedang dalam tahap pengembangan. Fitur ini akan tersedia pada versi berikutnya.    
+    Fitur ini akan tersedia pada versi berikutnya. 
+    """)
 
 # =============================================================================
 # BAGIAN 22: TAB REKOMENDASI
@@ -3479,14 +3479,14 @@ with tab_rec:
             <i class='fas fa-robot' style='margin-right:10px;'></i>
             COMING SOON
         </div>
-        <div style="font-size:14px;opacity:0.9;">
-        Smart Recommendation Engine, sistem rekomendasi berbasis machine learning yang menyesuaikan hasil prediksi dan dirancang untuk berkembang menjadi AI-based system.
-        </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.info("🚀 Fitur ini akan tersedia pada versi berikutnya.")
+    st.info("""
+    Smart Recommendation Engine berbasis machine learning yang menyesuaikan hasil prediksi dan dirancang untuk berkembang menjadi AI-based system.    
+    Fitur ini akan tersedia pada versi berikutnya. 
+    """)
 
 # =============================================================================
 # BAGIAN 23: TAB ANALYTICS
@@ -3510,14 +3510,14 @@ with tab_analytics:
             <i class='fas fa-robot' style='margin-right:10px;'></i>
             COMING SOON
         </div>
-        <div style="font-size:14px;opacity:0.9;">
-            Menampilkan analisis data, visualisasi, dan insight dari model machine learning.
-        </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.info("🚀 Fitur ini akan tersedia pada versi berikutnya.")
+    st.info("""
+    Menampilkan analisis data, visualisasi, dan insight dari model machine learning.    
+    Fitur ini akan tersedia pada versi berikutnya. 
+    """)
 
 # =============================================================================
 # BAGIAN 24: TAB 6 - EXPORT DATA
