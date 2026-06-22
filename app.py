@@ -1025,7 +1025,15 @@ st.markdown(
         background: linear-gradient(135deg, rgba(107, 15, 26, 0.03) 0%, rgba(107, 15, 26, 0.01) 100%);  
         margin-left: 0;  
         margin-right: 0;  
+    }}
+
+    .logo-section {{
+        margin-bottom: 15px;  
     }}  
+    .logo-section img {{
+        width: 120px;  
+        height: auto;  
+    }}   
 
     .header-title {{  
         font-size: 32px;  
@@ -1043,12 +1051,24 @@ st.markdown(
     }}
 
     .header-subtitle {{  
+        font-size: 16px;  
+        color: #6B0F1A;  
+        margin: 0 0 0 0px;
+        line-height: 1.6;
+        padding-left: 0;
+        font-style: italic;
+        font-weight: 600;
+        }}
+
+        .header-sub-subtitle {{  
         font-size: 14px;  
-        color: {COLORS['text_muted']};  
-        margin: 0 0 0 50 px;  /* ← Ubah ke 0 0 0 52px agar konsisten */  
-        line-height: 1.6;  
-        padding-left: 0;  
-    }}  
+        color: #6B0F1A;  
+        margin: 0 0 0 0px;
+        line-height: 1.6;
+        padding-left: 0;
+        font-style: italic;
+        font-weight: 200;
+        }}
 
     /* ===== KPI CARD STYLING ===== */
     .kpi-card {{
@@ -1696,21 +1716,59 @@ with st.sidebar:
 # =============================================================================
 # BAGIAN 12: MAIN HEADER
 # =============================================================================
+col_logo_sagelta, col_info_sagelta = st.columns([0.39, 2.7], gap='medium')
 
+with col_logo_sagelta:
+    # PENEMPATAN LOGO DARI PATH FILE
+    logo_sagelta_path = "logo_sagelta.png"
+    
+    try:
+        st.image(
+            logo_sagelta_path,
+            use_container_width=True
+        )
+    except FileNotFoundError:
+        st.markdown(
+            """
+            <div style='
+                width: 150px;
+                height: 150px;
+                background: linear-gradient(135deg, #6B0F1A 0%, #4A0A13 100%);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 60px;
+                color: white;
+                box-shadow: 0 8px 16px rgba(107, 15, 26, 0.2);'>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        st.caption("Logo SAGELTA (Default)")
+
+with col_info_sagelta:
+    st.markdown(
+        """
+        <div style='font-size: 32px; font-weight: 700; color: #6B0F1A; margin-bottom: 8px;'>
+            SAGELTA
+        </div>
+        <div style='font-size: 14px; color: #6B7280; margin-bottom: 12px; line-height: 1.6;'>
+            <strong>Student Analytics and Guided Election of Laboratory Track Assignment</strong>
+        </div>
+        <div style='font-size: 13px; color: #4B5563; line-height: 1.8;'>
+            Sistem Analitik Prediksi Peminatan Laboratorium untuk Penempatan Jalur Mahasiswa S1 Sistem Informasi Berbasis Nilai Akademik dan Aktivitas Tambahan
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# ← UBAH BAGIAN INI
 st.markdown(
-    """
-    <div class='header-container'>
-        <div class='header-title'>
-            Dashboard Peminatan Laboratorium
-        </div>
-        <div class='header-subtitle'>
-            Sistem prediksi minat mahasiswa S1 Sistem Informasi ke Laboratorium SAGE (Software Development & Architecture) 
-            atau DELTA (Data Analytics & Business Intelligence) berbasis nilai akademik dan aktivitas tambahan.
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
+    "<div class='divider' style='margin-top: -20px; margin-bottom: 20px;'></div>",
+    unsafe_allow_html=True
 )
+
 
 # =============================================================================
 # BAGIAN 13: VALIDASI DATASET & MODEL
