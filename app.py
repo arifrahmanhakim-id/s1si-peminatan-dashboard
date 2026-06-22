@@ -1716,7 +1716,7 @@ with st.sidebar:
 # =============================================================================
 # BAGIAN 12: MAIN HEADER
 # =============================================================================
-col_logo_sagelta, col_info_sagelta = st.columns([0.39, 2.7], gap='medium')
+col_logo_sagelta, col_info_sagelta = st.columns([0.3, 2.], gap='medium')
 
 with col_logo_sagelta:
     # PENEMPATAN LOGO DARI PATH FILE
@@ -1765,7 +1765,7 @@ with col_info_sagelta:
 
 # ← UBAH BAGIAN INI
 st.markdown(
-    "<div class='divider' style='margin-top: -20px; margin-bottom: 20px;'></div>",
+    "<div class='divider' style='margin-top: 10px; margin-bottom: 20px;'></div>",
     unsafe_allow_html=True
 )
 
@@ -3457,7 +3457,7 @@ with tab_report:
         total=total
     )
 
-    col_pdf1, col_pdf2 = st.columns(2, gap="large")
+    col_pdf1, col_pdf2 = st.columns(2, gap="medium")
 
     with col_pdf1:
         st.download_button(
@@ -3471,34 +3471,21 @@ with tab_report:
 
     with col_pdf2:
         st.markdown(
-        """
-        <div style="
-            background-color:#e8f4ff;
-            padding:12px;
-            border-radius:8px;
-            font-size:14px;
-            border-left:5px solid #1f77b4;">
-            Format PDF mencakup: Ringkasan, Kualitas, Detail, Rekomendasi, dan Kesimpulan.
-        </div>
-        """,
-        unsafe_allow_html=True
+            """
+            <div class='insight-box' style="margin-top: 0px;">
+                <div class='insight-title'>
+                    Fitur Laporan PDF
+                </div>
+                <div class='insight-text'>
+                    Ringkasan statistik, Analisis kualitas prediksi, Tabel detail peminatan, Rekomendasi implementasi, 
+                    Kesimpulan strategis, dan Footer dengan timestamp otomatis.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
-    st.markdown(
-        """
-        <div class='insight-box'>
-            <div class='insight-title'>
-                <i class='fas fa-info-circle'></i> Fitur Laporan PDF
-            </div>
-            <div class='insight-text'>
-                <strong>Konten Laporan:</strong><br/>
-                Ringkasan statistik, analisis kualitas prediksi, tabel detail sampel, rekomendasi implementasi, 
-                kesimpulan strategis, dan footer dengan timestamp otomatis.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+
 
 # =============================================================================
 # BAGIAN 21: TAB PROFIL LAB
