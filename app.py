@@ -4440,7 +4440,7 @@ st.markdown(
         <span style='color: {COLORS['maroon']};'>δ Delta Lab</span>
         <br>
         <span style='font-size: 10px; color: #9CA3AF; margin-top: 8px;'>
-            Dashboard v2.0 | Last Updated: {datetime.now().strftime('%d %B %Y')}
+            Sagelta v1.0 | Last Updated: {datetime.now().strftime('%d %B %Y')}
         </span>
     </div>
     """,
