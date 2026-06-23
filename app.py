@@ -906,7 +906,7 @@ def generate_pdf_report(df_out, detail_table, overall_avg_conf, sage_students,
     
     # ===== FOOTER =====
     story.append(Spacer(1, 0.4*inch))
-    footer_text = f"Laporan ini dihasilkan secara otomatis pada {datetime.now().strftime('%d %B %Y, %H:%M:%S')} | Dashboard v2.0"
+    footer_text = f"Laporan ini dihasilkan secara otomatis pada {datetime.now().strftime('%d %B %Y, %H:%M:%S')} | Sagelta v1.0"
     story.append(Paragraph(footer_text, ParagraphStyle(
         'Footer',
         parent=styles['Normal'],
@@ -991,7 +991,7 @@ COLORS = {
 
 # Konfigurasi halaman Streamlit
 st.set_page_config(
-    page_title="Dashboard Peminatan Lab",    # Judul browser tab
+    page_title="Sagelta",    # Judul browser tab
     page_icon="🔥",                          # Icon browser tab
     layout="wide",                           # Layout halaman (wide atau centered)
     initial_sidebar_state="expanded",        # Sidebar awal (expanded atau collapsed)
